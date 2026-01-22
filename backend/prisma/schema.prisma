@@ -1,0 +1,333 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  MANAGER
+  TEAM_LEADER
+  TEAM_MEMBER
+}
+
+enum ProjectPhase {
+  STUDIES
+  DESIGN
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  ON_HOLD
+  CANCELLED
+  COMPLETED
+}
+
+enum PhaseName {
+  STUDIES
+  DESIGN
+}
+
+enum PhaseStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum AssignmentRole {
+  TEAM_LEADER
+  TEAM_MEMBER
+}
+
+enum CostType {
+  EMPLOYEE_COST
+  MATERIAL_COST
+  OTHER_COST
+}
+
+enum ConfigurationCategory {
+  POSITION
+  REGION
+  LICENSE_TYPE
+  PROJECT_TYPE
+  REPLY_REASON
+  ALLOWANCE_TYPE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum AuditEntityType {
+  PROJECT
+  PHASE
+  TASK
+  ASSIGNMENT
+  COST_ENTRY
+  KPI_ENTRY
+  USER
+  CLIENT
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  name         String
+  role         UserRole
+  position     String?
+  region       String?
+  grade        String?
+  level        String?
+  monthlyCost  Decimal?     @db.Decimal(10, 2)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  assignments       Assignment[]
+  auditLogs         AuditLog[]
+  assignedTasks     Task[]
+  costEntries       CostEntry[]
+  kpiEntries       KPIEntry[]
+  completedRequirements ProjectRequirement[] @relation("RequirementCompleter")
+
+  @@index([role])
+  @@index([isActive])
+}
+
+model Client {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  address       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  projects      Project[]
+
+  @@index([isActive])
+}
+
+model Project {
+  id                    String       @id @default(uuid())
+  clientId              String
+  name                  String
+  contractCode          String       @unique
+  contractSigningDate   DateTime
+  builtUpArea           Decimal      @db.Decimal(10, 2)
+  licenseType           String?
+  projectType           String?
+  requirements          String?     @db.Text
+  startDate             DateTime
+  estimatedEndDate       DateTime
+  actualEndDate         DateTime?
+  currentPhase          ProjectPhase @default(STUDIES)
+  status                ProjectStatus @default(PLANNED)
+  modificationAllowedTimes Int        @default(3)
+  modificationDaysPerTime Int        @default(5)
+  totalCost             Decimal      @default(0) @db.Decimal(10, 2)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  version               Int          @default(1)
+
+  client                Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  phases                Phase[]
+  projectRequirements   ProjectRequirement[]
+  costEntries          CostEntry[]
+  kpiEntries           KPIEntry[]
+
+  @@index([clientId])
+  @@index([currentPhase])
+  @@index([status])
+  @@index([startDate, estimatedEndDate])
+}
+
+model Phase {
+  id                String      @id @default(uuid())
+  projectId          String
+  name              PhaseName
+  startDate         DateTime
+  duration          Int
+  estimatedEndDate   DateTime
+  actualStartDate    DateTime?
+  actualEndDate      DateTime?
+  status            PhaseStatus @default(PLANNED)
+  progress          Decimal     @default(0) @db.Decimal(5, 2)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  version           Int         @default(1)
+
+  project           Project     @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  tasks             Task[]
+  assignments       Assignment[]
+  costEntries       CostEntry[]
+  kpiEntries        KPIEntry[]
+
+  @@unique([projectId, name])
+  @@index([status])
+  @@index([startDate, estimatedEndDate])
+}
+
+model Task {
+  id                    String       @id @default(uuid())
+  phaseId               String
+  code                  String
+  description           String       @db.Text
+  duration              Int
+  status                TaskStatus   @default(PLANNED)
+  assignedTeamMemberId  String?
+  startDate             DateTime?
+  endDate               DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  version               Int          @default(1)
+
+  phase                 Phase        @relation(fields: [phaseId], references: [id], onDelete: Restrict)
+  assignedTeamMember     User?        @relation(fields: [assignedTeamMemberId], references: [id])
+
+  @@unique([phaseId, code])
+  @@index([status])
+  @@index([assignedTeamMemberId])
+  @@index([startDate, endDate])
+}
+
+model Assignment {
+  id                String         @id @default(uuid())
+  phaseId           String
+  teamMemberId      String
+  role              AssignmentRole
+  workingPercentage  Decimal        @db.Decimal(5, 2)
+  startDate         DateTime
+  endDate           DateTime?
+  isActive          Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  version           Int            @default(1)
+
+  phase             Phase          @relation(fields: [phaseId], references: [id], onDelete: Restrict)
+  teamMember        User           @relation(fields: [teamMemberId], references: [id])
+
+  @@unique([phaseId, teamMemberId, role])
+  @@index([teamMemberId])
+  @@index([startDate, endDate])
+  @@index([isActive])
+}
+
+model CostEntry {
+  id          String    @id @default(uuid())
+  projectId   String
+  phaseId     String
+  employeeId  String
+  period      DateTime
+  costAmount  Decimal   @db.Decimal(10, 2)
+  costType    CostType  @default(EMPLOYEE_COST)
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase       Phase     @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  employee    User      @relation(fields: [employeeId], references: [id])
+
+  @@unique([projectId, phaseId, employeeId, period])
+  @@index([projectId])
+  @@index([phaseId])
+  @@index([employeeId])
+  @@index([period])
+}
+
+model KPIEntry {
+  id                String   @id @default(uuid())
+  employeeId        String
+  projectId         String
+  phaseId           String
+  delayedDays       Int      @default(0)
+  clientModifications Int     @default(0)
+  technicalMistakes Int      @default(0)
+  period            DateTime?
+  score             Decimal? @db.Decimal(5, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  employee          User     @relation(fields: [employeeId], references: [id])
+  project           Project  @relation(fields: [projectId], references: [id])
+  phase             Phase    @relation(fields: [phaseId], references: [id])
+
+  @@index([employeeId])
+  @@index([projectId])
+  @@index([phaseId])
+  @@index([period])
+  @@index([score])
+}
+
+model ConfigurationItem {
+  id          String               @id @default(uuid())
+  category    ConfigurationCategory
+  name        String
+  code        String?
+  description String?              @db.Text
+  isActive    Boolean              @default(true)
+  sortOrder   Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([category, name])
+  @@index([category])
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model ProjectRequirement {
+  id           String   @id @default(uuid())
+  projectId    String
+  description  String
+  isCompleted  Boolean  @default(false)
+  completedAt  DateTime?
+  completedBy  String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  completedByUser  User?  @relation("RequirementCompleter", fields: [completedBy], references: [id])
+
+  @@index([projectId])
+  @@index([isCompleted])
+  @@index([sortOrder])
+}
+
+model AuditLog {
+  id         String         @id @default(uuid())
+  entityType AuditEntityType
+  entityId   String
+  action     AuditAction
+  changedBy  String
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime       @default(now())
+
+  changedByUser User         @relation(fields: [changedBy], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([changedBy])
+  @@index([timestamp])
+}

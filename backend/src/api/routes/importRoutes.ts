@@ -1,0 +1,198 @@
+import { Router, Request, Response } from 'express';
+import multer from 'multer';
+import ExcelImportService from '../services/excelImportService';
+import { authenticate } from '../middleware/auth';
+import { authorizeRole } from '../middleware/authz';
+import logger from '../utils/logger';
+
+const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+const excelImportService = new ExcelImportService();
+
+router.post('/import/excel/validate',
+  authenticate,
+  authorizeRole('MANAGER'),
+  upload.single('file'),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      if (!req.file) {
+        res.status(400).json({
+          success: false,
+          message: 'No file uploaded',
+        });
+        return;
+      }
+
+      const startTime = Date.now();
+
+      logger.info('Excel validation request received', {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+      });
+
+      const acceptedMimeTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'application/vnd.ms-excel.sheet.macroEnabled.12',
+      ];
+
+      if (!acceptedMimeTypes.includes(req.file.mimetype)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid file type. Please upload an Excel file (.xlsx, .xlsm, .xls)',
+        });
+        return;
+      }
+
+      const parsedData = await excelImportService.parseExcelFile(req.file.buffer);
+
+      const validationErrors = await excelImportService.validateExcelData(parsedData);
+
+      const totalRows = Object.values(parsedData).reduce((sum, arr) => sum + arr.length, 0);
+
+      const duration = Date.now() - startTime;
+
+      const result = {
+        success: validationErrors.length === 0,
+        message: validationErrors.length === 0
+          ? 'Excel file validated successfully'
+          : `Validation found ${validationErrors.length} error(s)`,
+        fileName: req.file.originalname,
+        totalRows,
+        summary: {
+          projects: parsedData.projects.length,
+          teamMembers: parsedData.teamMembers.length,
+          tasks: parsedData.tasks.length,
+          costs: parsedData.costs.length,
+          kpis: parsedData.kpis.length,
+          configuration: parsedData.configuration.length,
+        },
+        errors: validationErrors,
+        duration,
+        timestamp: new Date().toISOString(),
+      };
+
+      if (validationErrors.length > 0) {
+        logger.warn('Excel validation failed', {
+          fileName: req.file.originalname,
+          errorCount: validationErrors.length,
+          duration,
+        });
+      } else {
+        logger.info('Excel validation successful', {
+          fileName: req.file.originalname,
+          totalRows,
+          duration,
+        });
+      }
+
+      res.status(validationErrors.length > 0 ? 400 : 200).json(result);
+    } catch (error) {
+      logger.error('Excel validation error', { error });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to validate Excel file',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+);
+
+router.post('/import/excel',
+  authenticate,
+  authorizeRole('MANAGER'),
+  upload.single('file'),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      if (!req.file) {
+        res.status(400).json({
+          success: false,
+          message: 'No file uploaded',
+        });
+        return;
+      }
+
+      const startTime = Date.now();
+
+      logger.info('Excel import request received', {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+      });
+
+      const acceptedMimeTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'application/vnd.ms-excel.sheet.macroEnabled.12',
+      ];
+
+      if (!acceptedMimeTypes.includes(req.file.mimetype)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid file type. Please upload an Excel file (.xlsx, .xlsm, .xls)',
+        });
+        return;
+      }
+
+      const parsedData = await excelImportService.parseExcelFile(req.file.buffer);
+
+      const validationErrors = await excelImportService.validateExcelData(parsedData);
+
+      if (validationErrors.length > 0) {
+        res.status(400).json({
+          success: false,
+          message: `Validation failed with ${validationErrors.length} error(s). Please fix errors before importing.`,
+          errors: validationErrors,
+        });
+        return;
+      }
+
+      const importResult = await excelImportService.importData(parsedData);
+
+      const totalRows = Object.values(parsedData).reduce((sum, arr) => sum + arr.length, 0);
+      const duration = Date.now() - startTime;
+
+      const response = {
+        success: importResult.success,
+        message: importResult.message,
+        fileName: req.file.originalname,
+        imported: importResult.imported,
+        summary: {
+          totalRows,
+          successfulRows: importResult.imported
+            ? Object.values(importResult.imported).reduce((sum, val) => sum + val, 0)
+            : 0,
+        },
+        duration,
+        timestamp: new Date().toISOString(),
+      };
+
+      if (importResult.success) {
+        logger.info('Excel import successful', {
+          fileName: req.file.originalname,
+          imported: importResult.imported,
+          duration,
+        });
+      } else {
+        logger.error('Excel import failed', {
+          fileName: req.file.originalname,
+          error: importResult.message,
+          duration,
+        });
+      }
+
+      res.status(importResult.success ? 200 : 500).json(response);
+    } catch (error) {
+      logger.error('Excel import error', { error });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to import Excel file',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+);
+
+export default router;

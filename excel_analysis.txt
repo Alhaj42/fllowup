@@ -1,0 +1,149 @@
+=== REF.02.387.xlsx - Analysis ===
+
+Sheets: ['Home', 'Team members Data', 'List', 'Projects List', 'Project Follow up - Base', 'Project Costs', 'Team Members Over Time', 'Phases Over Time', 'Employees Summary', 'Tasks', 'Employees KPIs', 'Projects Timeline', 'Project Follow up - Report']
+
+=== Sheet: Home ===
+  Dimensions: D1:L14
+  Max row: 14, Max col: 12
+
+  Headers:
+    ['', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 4: ['', '', '', 'Database', '', '', '', 'This Project', '', '', '', 'All Projects']
+
+=== Sheet: Team members Data ===
+  Dimensions: A3:AN80
+  Max row: 80, Max col: 40
+
+  Headers:
+    ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 3: ['', '', '2024-12-01 00:00:00', '00:00:00', '2025-01-01 00:00:00', '00:00:00', '2025-02-01 00:00:00', '00:00:00', '2025-03-01 00:00:00', '00:00:00', '2025-04-01 00:00:00', '00:00:00', '2025-05-01 00:00:00', '00:00:00', '2025-06-01 00:00:00', '00:00:00', '2025-07-01 00:00:00', '00:00:00', '2025-08-01 00:00:00']
+    Row 4: ['Studies', 'Abdulrahman Bukees', '6', '', '8', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+=== Sheet: List ===
+  Dimensions: A2:T100
+  Max row: 100, Max col: 20
+
+  Headers:
+    ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 2: ['Phases', 'Position', 'Region', 'Assign To', 'Editing Reason', '', 'Lisence Type', 'Project Types', '', 'تبدأ مرحلة الدراسة بعد توقيع العقد بـ .... أيام', 'تبدأ مرحلة التصميم بعد اعتماد مرحلة الدراسة بـ ...', '', 'Holidays', '2025', 'Phase', 'Reply Reason', 'Allowance Times', 'Wieght (Reduction)', '']
+    Row 3: ['Studies', 'Head Dep', 'Riyadh', 'Client', 'Devlopment', '', 'Amanah', 'Residential', '', '', '', '2025-09-23 00:00:00', '2025-09-23 00:00:00', '2025', 'Studies', 'Client Modification ', '', '', '']
+    Row 4: ['Design', 'Architect', 'Cairo', 'RCRC', 'Internally', '', 'TOD', 'Commercial', '', '10', '5', '2025-02-22 00:00:00', '2026-09-23 00:00:00', '2026', 'Studies', 'Client Modification (Exceptional)', '', '', '']
+
+=== Sheet: Projects List ===
+  Dimensions: A1:AF205
+  Max row: 205, Max col: 32
+
+  Headers:
+    ['Project', 'Client', 'Contract Code', 'Signing Contract Date', 'BUA | M2', 'Lisence Type', 'Project Types', 'Project Requirment', 'Project Start Date | Contract', 'Estimated End Date', 'Stu. Team Leader', 'Stu. Team Leader Working Percentage', 'Stu. Start Date\n| Contract', 'Stu. Duration \n| Contract', 'Stu. Allowed Modification (Times)', 'Stu. Modification days per time', 'Design Team Leader', 'Design Team Leader Working Percentage', 'Design. Start Date\n| Contract']
+
+  Sample data rows:
+    Row 2: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
+    Row 3: ['', '', '', '', '', '', '', '', '', '', 'Study Phase', '', '', '', '', '', 'Design Phase', '', '']
+    Row 4: ['Project', 'Client', 'Contract Code', 'Signing Contract Date', 'BUA | M2', 'Lisence Type', 'Project Types', 'Project Requirment', 'Project Start Date | Contract', 'Estimated End Date', 'Stu. Team Leader', 'Stu. Team Leader Working Percentage', 'Stu. Start Date\n| Contract', 'Stu. Duration \n| Contract', 'Stu. Allowed Modification (Times)', 'Stu. Modification days per time', 'Design Team Leader', 'Design Team Leader Working Percentage', 'Design. Start Date\n| Contract']
+
+=== Sheet: Project Follow up - Base ===
+  Dimensions: A1:OI102
+  Max row: 102, Max col: 399
+
+  Headers:
+    ['', '', '', '', '', '', '', '', '', ' ', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 2: ['', '', '', '', '', '', '     ', '', '', '', '', '', '', '', '', '', '', '', '']
+    Row 3: ['', '', '', '', 'Fill in white cells only', '', '', '', '', '', '', '', '', '', '', '', 'Home Page ', '', '']
+
+=== Sheet: Project Costs ===
+  Dimensions: A1:BB284
+  Max row: 284, Max col: 54
+
+  Headers:
+    ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 2: ['', '', '', 'Home Page ', 'Project Costs', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+=== Sheet: Team Members Over Time ===
+  Dimensions: A2:AO106
+  Max row: 106, Max col: 41
+
+  Headers:
+    ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 2: ['', '', '', '', '', '', '', '', 'Home Page       ', '', '', '', 'Project Team Members Over Time', '', '', '', '', '', '']
+    Row 4: ['', 'Net Work Days in the Month:', '', '', '', '23', '', '22', '', '20', '', '20', '', '21', '', '21', '', '20', '']
+
+=== Sheet: Phases Over Time ===
+  Dimensions: A2:T13
+  Max row: 13, Max col: 20
+
+  Headers:
+    ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 2: ['', '', '', '', 'Phases Over Time', '', '', '', '', 'Home Page       ', '', '', '', '', '', '', '', '', '']
+    Row 4: ['', '', '23', '22', '20', '22', '22', '21', '22', '23', '21', '23', '23', '23', '23', '23', '23', '23', '23']
+
+=== Sheet: Employees Summary ===
+  Dimensions: A1:M104
+  Max row: 104, Max col: 13
+
+  Headers:
+    ['', '', '', '', '', 'Employees Summary', '', '', '', '', '', 'Home Page ', '']
+
+  Sample data rows:
+    Row 3: ['', 'Phase', 'Employee', 'Position', "Emoployee's Cost\n| Monthly", 'Total Days on Project', 'Total M2 Done', '', 'Total Cost', 'Email', 'Region', 'Grade', 'Level']
+    Row 4: ['Design 0', 'Design', 'Ahmed AL-Attas', '', '', '', '', 'Design Ahmed AL-Attas', '', '', 'Riyadh', '', '']
+
+=== Sheet: Tasks ===
+  Dimensions: A1:BM148
+  Max row: 148, Max col: 65
+
+  Headers:
+    ['', '', '', '', '', '', '', 'Task Duration (days)', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 2: ['Code', 'Phase', 'Task Discribtion ', '', '', 'Park View', 'Details', 'Jevan Tower', 'Al Hamra Mixed Use TOD Project', '', '', '', '', '', '', '', '', '', '']
+    Row 3: ['Studies Working on - Studies', 'Studies', 'Working on - Studies', '', '', '15', '15', '15', '15', '15', '15', '15', '15', '', '', '', '', '', '']
+    Row 4: ['Studies ReWorking  - Studies ', 'Studies', 'ReWorking  - Studies ', '', '', '5', '5', '5', '5', '5', '5', '5', '5', '', '', '', '', '', '']
+
+=== Sheet: Employees KPIs ===
+  Dimensions: A1:DB103
+  Max row: 103, Max col: 106
+
+  Headers:
+    ['Employees KPIs', '', '', '', '', '', '', '', 'Home Page            ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+
+  Sample data rows:
+    Row 2: ['In Project', 'Phase', 'Employee', 'Team Members Grade', 'Team Leaders Grade', 'Delayed (Days)', 'Delayed Reduction', 'Reply Reason Reduction', 'Client Modification ', 'Client Modification ', 'Client Modification (Exceptional)', 'Technical Mistake', '...', 'Client Modification ', 'Client Modification (Exceptional)', 'Technical Mistake', 'G.C Modification (Problems)', 'G.C Modification (Opinion)', '...']
+    Row 3: ['', 'Design', 'Ahmed AL-Attas', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+    Row 4: ['', 'Design', 'Younes Al-Ammar', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+=== Sheet: Projects Timeline ===
+  Dimensions: A1:BA206
+  Max row: 206, Max col: 53
+
+  Headers:
+    ['', '', '', 'Month', '', '1900-01-01 00:00:00', '1900-02-01 00:00:00', '1900-03-01 00:00:00', '1900-04-01 00:00:00', '1900-05-01 00:00:00', '1900-06-01 00:00:00', '1900-07-01 00:00:00', '1900-08-01 00:00:00', '1900-09-01 00:00:00', '1900-10-01 00:00:00', '1900-11-01 00:00:00', '1900-12-01 00:00:00', '1901-01-01 00:00:00', '1901-02-01 00:00:00']
+
+  Sample data rows:
+    Row 2: ['', '', '', 'No. of Projects', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+    Row 3: ['', '2024-08-27 00:00:00', '2026-03-11 00:00:00', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+    Row 4: ['', '', '19', '36', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+=== Sheet: Project Follow up - Report ===
+  Dimensions: A1:OI101
+  Max row: 101, Max col: 399
+
+  Headers:
+    ['', '', '', '', '', '', 'Project Follow up - Client Report', '', '', '', '', '', '', '', '', '', '', '', '']
+
+  Sample data rows:
+    Row 2: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Home Page ', '']
+

@@ -1,0 +1,252 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Fllowup API",
+    "description": "API for Excel-to-SaaS project management system",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@fllowup.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.fllowup.com/api/v1",
+      "description": "Production server"
+    },
+    {
+      "url": "https://staging-api.fllowup.com/api/v1",
+      "description": "Staging server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Authentication and user management"
+    },
+    {
+      "name": "Projects",
+      "description": "Project CRUD operations"
+    },
+    {
+      "name": "Phases",
+      "description": "Project phase management"
+    },
+    {
+      "name": "Tasks",
+      "description": "Task management"
+    },
+    {
+      "name": "Team",
+      "description": "Team member assignment and allocation"
+    },
+    {
+      "name": "Costs",
+      "description": "Cost tracking"
+    },
+    {
+      "name": "KPIs",
+      "description": "KPI tracking"
+    },
+    {
+      "name": "Reports",
+      "description": "Report generation"
+    },
+    {
+      "name": "Configuration",
+      "description": "Reference data management"
+    },
+    {
+      "name": "Import",
+      "description": "Excel data import"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "User login",
+        "description": "Authenticate user and return JWT tokens",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string"
+                    },
+                    "refreshToken": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get all projects",
+        "description": "Retrieve list of projects with filtering and pagination",
+        "operationId": "getProjects",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PLANNED",
+                "IN_PROGRESS",
+                "ON_HOLD",
+                "CANCELLED",
+                "COMPLETED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projects retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "projects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Project"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "contractCode": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "IN_PROGRESS",
+              "ON_HOLD",
+              "CANCELLED",
+              "COMPLETED"
+            ]
+          },
+          "currentPhase": {
+            "type": "string",
+            "enum": [
+              "STUDIES",
+              "DESIGN",
+              "COMPLETED"
+            ]
+          },
+          "totalCost": {
+            "type": "number",
+            "format": "decimal"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
