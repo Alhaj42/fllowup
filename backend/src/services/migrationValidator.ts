@@ -2,6 +2,7 @@ export interface ValidationError {
   field: string;
   message: string;
   row?: number;
+  severity?: 'error' | 'warning';
 }
 
 export interface ValidationResult {

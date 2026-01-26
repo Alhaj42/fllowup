@@ -1,13 +1,21 @@
-import { PrismaClient, Assignment, AssignmentRole, AuditEntityType, AuditAction } from '@prisma/client';
+import { PrismaClient, Assignment, AssignmentRole, Role, AuditAction } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
-import config from '../config';
+import { prisma } from './prismaClient';
 
 export interface CreateAssignmentInput {
-  teamMemberId: string;
+  phaseId: string;
+  userId: string;
   role: AssignmentRole;
-  workingPercentage: number;
+  workingPercent: number;
   startDate: Date;
+  endDate?: Date;
+}
+
+export interface UpdateAssignmentInput {
+  role?: AssignmentRole;
+  workingPercent?: number;
+  startDate?: Date;
   endDate?: Date;
 }
 
@@ -20,6 +28,7 @@ export interface GetTeamAllocationFilter {
 export interface TeamMemberAllocation {
   userId: string;
   userName: string;
+  userEmail: string;
   totalAllocation: number;
   isOverallocated: boolean;
   assignments: Array<{
@@ -27,9 +36,10 @@ export interface TeamMemberAllocation {
     phaseId: string;
     projectName: string;
     role: AssignmentRole;
-    workingPercentage: number;
+    workingPercent: number;
     startDate: Date;
     endDate: Date | null;
+    userEmail: string;
   }>;
 }
 
@@ -44,63 +54,60 @@ class AssignmentService {
   private prisma: PrismaClient;
 
   constructor() {
-    this.prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: config.database.url,
-        },
-      },
-    });
+    this.prisma = prisma;
   }
 
   async createAssignment(
-    phaseId: string,
     input: CreateAssignmentInput,
-    userId: string
+    currentUserId: string,
+    currentUserRole: Role
   ): Promise<Assignment> {
     try {
       const assignment = await this.prisma.assignment.create({
         data: {
-          phaseId,
-          teamMemberId: input.teamMemberId,
+          phaseId: input.phaseId,
+          userId: input.userId,
           role: input.role,
-          workingPercentage: input.workingPercentage,
+          workingPercent: input.workingPercent,
           startDate: input.startDate,
           endDate: input.endDate,
-          isActive: true,
         },
         include: {
-          phase: {
-            include: {
-              project: true,
-            },
-          },
-          teamMember: true,
+          user: true,
+          phase: true,
         },
       });
 
       await AuditLogService.logCreate(
-        AuditEntityType.ASSIGNMENT,
+        'Assignment',
         assignment.id,
-        userId,
+        currentUserId,
+        currentUserRole,
         assignment
       );
 
-      logger.info('Assignment created successfully', { assignmentId: assignment.id, phaseId });
+      logger.info('Assignment created successfully', { assignmentId: assignment.id, phaseId: input.phaseId });
 
       return assignment;
     } catch (error) {
-      logger.error('Failed to create assignment', { error, input, phaseId });
+      logger.error('Failed to create assignment', { error, input });
       throw error;
     }
   }
 
-  async getAssignmentsByPhase(phaseId: string, userId: string): Promise<Assignment[]> {
+  async getAssignmentsByPhase(phaseId: string): Promise<Assignment[]> {
     try {
       const assignments = await this.prisma.assignment.findMany({
         where: { phaseId },
         include: {
-          teamMember: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
           phase: {
             include: {
               project: true,
@@ -109,8 +116,6 @@ class AssignmentService {
         },
         orderBy: { startDate: 'asc' },
       });
-
-      logger.info('Phase assignments retrieved successfully', { phaseId, count: assignments.length });
 
       return assignments;
     } catch (error) {
@@ -119,10 +124,10 @@ class AssignmentService {
     }
   }
 
-  async getAssignmentsByTeamMember(teamMemberId: string, userId: string): Promise<Assignment[]> {
+  async getAssignmentsByTeamMember(userId: string): Promise<Assignment[]> {
     try {
       const assignments = await this.prisma.assignment.findMany({
-        where: { teamMemberId, isActive: true },
+        where: { userId },
         include: {
           phase: {
             include: {
@@ -133,19 +138,18 @@ class AssignmentService {
         orderBy: { startDate: 'asc' },
       });
 
-      logger.info('Team member assignments retrieved successfully', { teamMemberId, count: assignments.length });
-
       return assignments;
     } catch (error) {
-      logger.error('Failed to get team member assignments', { error, teamMemberId });
+      logger.error('Failed to get team member assignments', { error, userId });
       throw error;
     }
   }
 
   async updateAssignment(
     id: string,
-    input: Partial<CreateAssignmentInput>,
-    userId: string
+    input: UpdateAssignmentInput,
+    currentUserId: string,
+    currentUserRole: Role
   ): Promise<Assignment> {
     try {
       const existing = await this.prisma.assignment.findUnique({
@@ -158,24 +162,18 @@ class AssignmentService {
 
       const assignment = await this.prisma.assignment.update({
         where: { id },
-        data: {
-          ...(input.teamMemberId && { teamMemberId: input.teamMemberId }),
-          ...(input.role && { role: input.role }),
-          ...(input.workingPercentage !== undefined && { workingPercentage: input.workingPercentage }),
-          ...(input.startDate && { startDate: input.startDate }),
-          ...(input.endDate !== undefined && { endDate: input.endDate }),
-          version: { increment: 1 },
-        },
+        data: input,
         include: {
           phase: true,
-          teamMember: true,
+          user: true,
         },
       });
 
       await AuditLogService.logUpdate(
-        AuditEntityType.ASSIGNMENT,
+        'Assignment',
         id,
-        userId,
+        currentUserId,
+        currentUserRole,
         existing,
         assignment
       );
@@ -189,7 +187,11 @@ class AssignmentService {
     }
   }
 
-  async deleteAssignment(id: string, userId: string): Promise<void> {
+  async deleteAssignment(
+    id: string,
+    currentUserId: string,
+    currentUserRole: Role
+  ): Promise<void> {
     try {
       const assignment = await this.prisma.assignment.findUnique({
         where: { id },
@@ -204,9 +206,10 @@ class AssignmentService {
       });
 
       await AuditLogService.logDelete(
-        AuditEntityType.ASSIGNMENT,
+        'Assignment',
         id,
-        userId,
+        currentUserId,
+        currentUserRole,
         assignment
       );
 
@@ -218,16 +221,13 @@ class AssignmentService {
   }
 
   async getTeamAllocation(
-    filter: GetTeamAllocationFilter,
-    userId: string
+    filter: GetTeamAllocationFilter
   ): Promise<TeamAllocationSummary> {
     try {
       const startDate = filter.startDate ? new Date(filter.startDate) : undefined;
       const endDate = filter.endDate ? new Date(filter.endDate) : undefined;
 
-      let whereClause: any = {
-        isActive: true,
-      };
+      let whereClause: any = {};
 
       if (startDate || endDate) {
         whereClause.OR = [
@@ -235,6 +235,12 @@ class AssignmentService {
           { startDate: { lte: endDate || new Date() }, endDate: null },
           { startDate: { gte: startDate || new Date() }, endDate: { gte: endDate || new Date() } },
         ];
+      }
+
+      if (filter.projectId) {
+        whereClause.phase = {
+          projectId: filter.projectId,
+        };
       }
 
       if (filter.projectId) {
@@ -251,14 +257,13 @@ class AssignmentService {
               project: true,
             },
           },
-          teamMember: true,
+          user: true,
         },
       });
 
       const teamMembers = await this.prisma.user.findMany({
         where: {
           role: { in: ['MANAGER', 'TEAM_LEADER', 'TEAM_MEMBER'] },
-          isActive: true,
         },
       });
 
@@ -268,6 +273,7 @@ class AssignmentService {
         allocationsMap.set(member.id, {
           userId: member.id,
           userName: member.name,
+          userEmail: member.email,
           totalAllocation: 0,
           isOverallocated: false,
           assignments: [],
@@ -275,18 +281,19 @@ class AssignmentService {
       });
 
       assignments.forEach(assignment => {
-        const memberAllocation = allocationsMap.get(assignment.teamMemberId);
+        const memberAllocation = allocationsMap.get(assignment.userId);
         if (memberAllocation) {
-          const percentage = Number(assignment.workingPercentage);
+          const percentage = assignment.workingPercent;
           memberAllocation.totalAllocation += percentage;
           memberAllocation.assignments.push({
             id: assignment.id,
             phaseId: assignment.phaseId,
             projectName: assignment.phase.project.name,
             role: assignment.role,
-            workingPercentage: percentage,
+            workingPercent: percentage,
             startDate: assignment.startDate,
             endDate: assignment.endDate,
+            userEmail: assignment.user.email,
           });
         }
       });
@@ -307,12 +314,6 @@ class AssignmentService {
         allocations,
       };
 
-      logger.info('Team allocation calculated successfully', {
-        totalTeamMembers: summary.totalTeamMembers,
-        allocatedMembers: summary.allocatedMembers,
-        overallocatedMembers: summary.overallocatedMembers,
-      });
-
       return summary;
     } catch (error) {
       logger.error('Failed to calculate team allocation', { error, filter });
@@ -321,42 +322,32 @@ class AssignmentService {
   }
 
   async checkOverAllocation(
-    teamMemberId: string,
-    newWorkingPercentage: number,
-    userId: string
+    userId: string,
+    newWorkingPercent: number
   ): Promise<{ isOverallocated: boolean; currentAllocation: number }> {
     try {
       const currentAssignments = await this.prisma.assignment.findMany({
         where: {
-          teamMemberId,
-          isActive: true,
+          userId,
         },
       });
 
       const currentAllocation = currentAssignments.reduce(
-        (sum, assignment) => sum + Number(assignment.workingPercentage),
+        (sum, assignment) => sum + assignment.workingPercent,
         0
       );
 
-      const isOverallocated = (currentAllocation + newWorkingPercentage) > 100;
-
-      logger.info('Over-allocation check completed', {
-        teamMemberId,
-        currentAllocation,
-        newAllocation: newWorkingPercentage,
-        totalAllocation: currentAllocation + newWorkingPercentage,
-        isOverallocated,
-      });
+      const isOverallocated = (currentAllocation + newWorkingPercent) > 100;
 
       return {
         isOverallocated,
         currentAllocation,
       };
     } catch (error) {
-      logger.error('Failed to check over-allocation', { error, teamMemberId });
+      logger.error('Failed to check over-allocation', { error, userId });
       throw error;
     }
   }
 }
 
-export default AssignmentService;
+export default new AssignmentService();

@@ -1,114 +1,166 @@
-import { PrismaClient, AuditEntityType, AuditAction } from '@prisma/client';
-import config from '../config';
+import { AuditAction, Role, AuditLog as AuditLogModel } from '@prisma/client';
+import { prisma } from './prismaClient';
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: config.database.url,
-    },
-  },
-});
-
-interface AuditLogInput {
-  entityType: AuditEntityType;
+interface AuditLogData {
+  entityType: string;
   entityId: string;
   action: AuditAction;
-  changedBy: string;
-  changes?: unknown;
-  ipAddress?: string;
-  userAgent?: string;
+  userId: string;
+  role: Role;
+  details?: string;
+}
+
+interface AuditLogWithChanges {
+  entityType: string;
+  entityId: string;
+  action: AuditAction;
+  userId: string;
+  role: Role;
+  details?: string;
+  before?: unknown;
+  after?: unknown;
 }
 
 export const AuditLogService = {
-  async log(input: AuditLogInput) {
-    try {
-      await prisma.auditLog.create({
-        data: {
-          entityType: input.entityType,
-          entityId: input.entityId,
-          action: input.action,
-          changedBy: input.changedBy,
-          changes: input.changes as any,
-          ipAddress: input.ipAddress,
-          userAgent: input.userAgent,
-        },
-      });
-    } catch (error) {
-      console.error('Failed to create audit log:', error);
-      throw error;
-    }
+  async createAuditLog(data: AuditLogData): Promise<AuditLogModel> {
+    return prisma.auditLog.create({
+      data: {
+        entityType: data.entityType,
+        entityId: data.entityId,
+        action: data.action,
+        userId: data.userId,
+        role: data.role,
+        details: data.details,
+      },
+    });
   },
 
   async logCreate(
-    entityType: AuditEntityType,
+    entityType: string,
     entityId: string,
-    changedBy: string,
+    userId: string,
+    role: Role,
     data: unknown
   ) {
-    return this.log({
+    const details = JSON.stringify({ after: data });
+    return this.createAuditLog({
       entityType,
       entityId,
       action: AuditAction.CREATE,
-      changedBy,
-      changes: { after: data },
+      userId,
+      role,
+      details,
     });
   },
 
   async logUpdate(
-    entityType: AuditEntityType,
+    entityType: string,
     entityId: string,
-    changedBy: string,
+    userId: string,
+    role: Role,
     before: unknown,
     after: unknown
   ) {
-    return this.log({
+    const details = JSON.stringify({ before, after });
+    return this.createAuditLog({
       entityType,
       entityId,
       action: AuditAction.UPDATE,
-      changedBy,
-      changes: { before, after },
+      userId,
+      role,
+      details,
     });
   },
 
   async logDelete(
-    entityType: AuditEntityType,
+    entityType: string,
     entityId: string,
-    changedBy: string,
+    userId: string,
+    role: Role,
     data: unknown
   ) {
-    return this.log({
+    const details = JSON.stringify({ before: data });
+    return this.createAuditLog({
       entityType,
       entityId,
       action: AuditAction.DELETE,
-      changedBy,
-      changes: { before: data },
+      userId,
+      role,
+      details,
     });
   },
 
-  async getHistory(entityType: AuditEntityType, entityId: string) {
-    try {
-      return await prisma.auditLog.findMany({
-        where: {
-          entityType,
-          entityId,
-        },
-        orderBy: {
-          timestamp: 'desc',
-        },
-        include: {
-          changedByUser: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-            },
+  async logStatusChange(
+    entityType: string,
+    entityId: string,
+    userId: string,
+    role: Role,
+    oldStatus: string,
+    newStatus: string
+  ) {
+    const details = JSON.stringify({ oldStatus, newStatus });
+    return this.createAuditLog({
+      entityType,
+      entityId,
+      action: AuditAction.STATUS_CHANGE,
+      userId,
+      role,
+      details,
+    });
+  },
+
+  async getAuditLogsByEntity(
+    entityType: string,
+    entityId: string,
+  ): Promise<AuditLogModel[]> {
+    return prisma.auditLog.findMany({
+      where: {
+        entityType,
+        entityId,
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
           },
         },
-      });
-    } catch (error) {
-      console.error('Failed to retrieve audit history:', error);
-      throw error;
-    }
+      },
+    });
+  },
+
+  async getAuditLogsByUser(userId: string, limit = 100): Promise<AuditLogModel[]> {
+    return prisma.auditLog.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+      take: limit,
+    });
+  },
+
+  async getRecentAuditLogs(limit = 50): Promise<AuditLogModel[]> {
+    return prisma.auditLog.findMany({
+      orderBy: {
+        timestamp: 'desc',
+      },
+      take: limit,
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
   },
 };
 

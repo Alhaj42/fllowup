@@ -1,7 +1,6 @@
-import { PrismaClient, AuditLog, AuditAction } from '@prisma/client';
+import { PrismaClient, AuditLog, AuditAction, AuditAction as AuditActionType } from '@prisma/client';
 import logger from '../utils/logger';
-
-const prisma = new PrismaClient({});
+import { prisma } from './prismaClient';
 
 export interface ModificationRecord {
   id: string;
@@ -38,13 +37,14 @@ class ModificationTrackingService {
         data: {
           entityType: 'Project',
           entityId: params.projectId,
-          action: AuditAction.UPDATE,
+          action: 'UPDATE',
           userId: params.userId,
-          changes: {
+          role: 'MANAGER', // Defaulting to manager for system actions
+          details: JSON.stringify({
             modificationNumber: params.modificationNumber,
             description: params.description,
             daysUsed: params.daysUsed,
-          },
+          }),
           timestamp: new Date(),
         },
       });
@@ -71,21 +71,30 @@ class ModificationTrackingService {
         where: {
           entityType: 'Project',
           entityId: projectId,
-          action: AuditAction.UPDATE,
+          action: 'UPDATE',
         },
         orderBy: {
           timestamp: 'asc',
         },
       });
 
-      return auditLogs.map((log, index) => ({
-        id: log.id,
-        projectId: log.entityId,
-        modificationNumber: (log.changes as any)?.modificationNumber || index + 1,
-        description: (log.changes as any)?.description || 'Modification',
-        createdAt: log.timestamp,
-        createdBy: log.userId,
-      }));
+      return auditLogs.map((log, index) => {
+        let details: any = {};
+        try {
+          details = JSON.parse(log.details || '{}');
+        } catch (e) {
+          details = {};
+        }
+
+        return {
+          id: log.id,
+          projectId: log.entityId,
+          modificationNumber: details.modificationNumber || index + 1,
+          description: details.description || 'Modification',
+          createdAt: log.timestamp,
+          createdBy: log.userId,
+        };
+      });
     } catch (error) {
       logger.error(`Failed to get modifications for project ${projectId}:`, error);
       throw new Error('Failed to get modifications');

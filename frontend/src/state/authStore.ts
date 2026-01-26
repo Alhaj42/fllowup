@@ -1,80 +1,110 @@
 import { create } from 'zustand';
-
-export type UserRole = 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER';
+import { persist } from 'zustand/middleware';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER';
 }
 
 interface AuthState {
-  user: User | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
+  user: User | null;
+  token: string | null;
   isLoading: boolean;
-  
-  setAuth: (user: User, token: string) => void;
-  setUser: (user: User) => void;
-  setToken: (token: string) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  setLoading: (isLoading: boolean) => void;
-  
-  hasRole: (roles: UserRole[]) => boolean;
-  hasMinimumRole: (minimumRole: UserRole) => boolean;
+  setUser: (user: User | null) => void;
+  setToken: (token: string | null) => void;
+  setLoading: (loading: boolean) => void;
 }
 
-const roleHierarchy: Record<UserRole, number> = {
-  MANAGER: 3,
-  TEAM_LEADER: 2,
-  TEAM_MEMBER: 1,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      isAuthenticated: false,
+      user: null,
+      token: null,
+      isLoading: false,
+
+      login: async (email: string, password: string) => {
+        set({ isLoading: true });
+        try {
+          const mockUser: User = {
+            id: '1',
+            email,
+            name: email.split('@')[0],
+            role: 'MANAGER',
+          };
+          const mockToken = 'mock-jwt-token-development';
+
+          localStorage.setItem('auth_token', mockToken);
+          localStorage.setItem('auth_user', JSON.stringify(mockUser));
+
+          set({
+            isAuthenticated: true,
+            user: mockUser,
+            token: mockToken,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      logout: () => {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        set({
+          isAuthenticated: false,
+          user: null,
+          token: null,
+          isLoading: false,
+        });
+      },
+
+      setUser: (user: User | null) => {
+        localStorage.setItem('auth_user', JSON.stringify(user));
+        set({ user });
+      },
+
+      setToken: (token: string | null) => {
+        if (token) {
+          localStorage.setItem('auth_token', token);
+        } else {
+          localStorage.removeItem('auth_token');
+        }
+        set({ token });
+      },
+
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);
+
+export const hasRole = (role: User['role']): boolean => {
+  const user = useAuthStore.getState().user;
+  return user?.role === role;
 };
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  accessToken: localStorage.getItem('accessToken'),
-  isAuthenticated: !!localStorage.getItem('accessToken'),
-  isLoading: false,
-
-  setAuth: (user: User, token: string) => {
-    localStorage.setItem('accessToken', token);
-    localStorage.setItem('user', JSON.stringify(user));
-    set({ user, accessToken: token, isAuthenticated: true });
-  },
-
-  setUser: (user: User) => {
-    localStorage.setItem('user', JSON.stringify(user));
-    set({ user });
-  },
-
-  setToken: (token: string) => {
-    localStorage.setItem('accessToken', token);
-    set({ accessToken: token, isAuthenticated: true });
-  },
-
-  logout: () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    set({ user: null, accessToken: null, isAuthenticated: false });
-  },
-
-  setLoading: (isLoading: boolean) => {
-    set({ isLoading });
-  },
-
-  hasRole: (roles: UserRole[]) => {
-    const { user } = get();
-    return user ? roles.includes(user.role) : false;
-  },
-
-  hasMinimumRole: (minimumRole: UserRole) => {
-    const { user } = get();
-    if (!user) return false;
-    const userLevel = roleHierarchy[user.role] ?? 0;
-    const requiredLevel = roleHierarchy[minimumRole] ?? 0;
-    return userLevel >= requiredLevel;
-  },
+export const useAuthActions = () => useAuthStore((state) => ({
+  login: state.login,
+  logout: state.logout,
+  setUser: state.setUser,
+  setToken: state.setToken,
+  setLoading: state.setLoading,
 }));
 
-export default useAuthStore;
+export const useAuthUser = () => useAuthStore((state) => state.user);

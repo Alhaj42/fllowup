@@ -6,10 +6,9 @@ import RequirementService from '../../services/requirementService';
 import modificationTrackingService from '../../services/modificationTrackingService';
 import logger from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../services/prismaClient';
 
 const router = Router();
-const prisma = new PrismaClient({});
 const projectService = new ProjectService();
 
 router.post('/',
@@ -23,7 +22,7 @@ router.post('/',
 
       const input = req.body as CreateProjectInput;
 
-      const project = await projectService.createProject(input, req.user.id);
+      const project = await projectService.createProject(input, req.user.id, req.user.role);
 
       res.status(201).json(project);
     } catch (error) {
@@ -106,7 +105,7 @@ router.put('/:id',
         throw new AppError('Version conflict: The record was modified by another user', 409);
       }
 
-      const updatedProject = await projectService.updateProject(id as string, input, req.user.id);
+      const updatedProject = await projectService.updateProject(id as string, input, req.user.id, req.user.role);
 
       res.json(updatedProject);
     } catch (error) {
@@ -194,7 +193,7 @@ router.delete('/:id',
 
       const { id } = req.params;
 
-      await projectService.deleteProject(id as string, req.user.id);
+      await projectService.deleteProject(id as string, req.user.id, req.user.role);
 
       res.status(204).send();
     } catch (error) {
@@ -232,7 +231,7 @@ router.get('/:id/phases',
           tasks: true,
           assignments: {
             include: {
-              teamMember: true,
+              user: true,
             },
           },
         },
@@ -265,10 +264,6 @@ router.get('/:id/requirements',
 
       const requirements = await prisma.projectRequirement.findMany({
         where: { projectId: id as string },
-        include: {
-          completedByUser: true,
-        },
-        orderBy: { sortOrder: 'asc' },
       });
 
       res.json(requirements);

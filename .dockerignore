@@ -1,6 +1,50 @@
-# Docker
+# Dependencies
 node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Environment
+.env
+.env.*
+*.env
+
+# Logs
+*.log*
+logs/
+
+# Cache
+.cache/
+.vite/
+
+# Build outputs
 dist/
 build/
-*.log
-.env*
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp

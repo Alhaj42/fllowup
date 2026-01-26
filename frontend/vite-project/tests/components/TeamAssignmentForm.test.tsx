@@ -1,18 +1,20 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
+import '@testing-library/jest-dom';
 import TeamAssignmentForm from '../../src/components/TeamAssignmentForm';
 import apiClient from '../../src/services/api';
 
-jest.mock('../../src/services/api');
+vi.mock('../../src/services/api');
 
 describe('TeamAssignmentForm Component', () => {
   const mockProps = {
     phaseId: 'phase-1',
-    onCancel: jest.fn(),
-    onSuccess: jest.fn(),
+    onCancel: vi.fn(),
+    onSuccess: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Rendering', () => {
@@ -42,7 +44,7 @@ describe('TeamAssignmentForm Component', () => {
 
   describe('Form Validation', () => {
     it('should show error when team member is not selected', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { users: [] } });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: { users: [] } });
 
       render(<TeamAssignmentForm {...mockProps} />);
 
@@ -55,7 +57,7 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should show error when working percentage is not provided', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
 
       render(<TeamAssignmentForm {...mockProps} />);
 
@@ -70,7 +72,7 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should show error when working percentage is out of range (0-100)', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
 
       render(<TeamAssignmentForm {...mockProps} />);
 
@@ -86,7 +88,7 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should show error when start date is not provided', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
 
       render(<TeamAssignmentForm {...mockProps} />);
 
@@ -104,7 +106,7 @@ describe('TeamAssignmentForm Component', () => {
 
   describe('Form Submission', () => {
     it('should call API with correct data on submit', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({
         data: {
           users: [
             { id: 'user-1', name: 'John Doe', role: 'TEAM_MEMBER' },
@@ -113,7 +115,7 @@ describe('TeamAssignmentForm Component', () => {
         },
       });
 
-      (apiClient.post as jest.Mock).mockResolvedValue({
+      (apiClient.post as vi.MockedFunction).mockResolvedValue({
         data: {
           id: 'assignment-1',
           phaseId: 'phase-1',
@@ -148,8 +150,8 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should call onSuccess callback on successful submission', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
-      (apiClient.post as jest.Mock).mockResolvedValue({ data: { id: 'assignment-1' } });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
+      (apiClient.post as vi.MockedFunction).mockResolvedValue({ data: { id: 'assignment-1' } });
 
       render(<TeamAssignmentForm {...mockProps} />);
 
@@ -167,9 +169,9 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should show loading state during submission', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
       let resolvePromise: any;
-      (apiClient.post as jest.Mock).mockImplementation(() => new Promise(resolve => {
+      (apiClient.post as vi.MockedFunction).mockImplementation(() => new Promise(resolve => {
         resolvePromise = resolve;
       }));
 
@@ -195,8 +197,8 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should show error message on API failure', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
-      (apiClient.post as jest.Mock).mockRejectedValue(new Error('API Error'));
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: { users: [{ id: '1', name: 'John' }] } });
+      (apiClient.post as vi.MockedFunction).mockRejectedValue(new Error('API Error'));
 
       render(<TeamAssignmentForm {...mockProps} />);
 
@@ -237,7 +239,7 @@ describe('TeamAssignmentForm Component', () => {
 
   describe('Team Member Loading', () => {
     it('should show loading state while fetching team members', async () => {
-      (apiClient.get as jest.Mock).mockImplementation(() => new Promise(() => {}));
+      (apiClient.get as vi.MockedFunction).mockImplementation(() => new Promise(() => {}));
 
       render(<TeamAssignmentForm {...mockProps} />);
 
@@ -245,7 +247,7 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should populate team member dropdown after loading', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({
         data: {
           users: [
             { id: 'user-1', name: 'John Doe' },
@@ -262,7 +264,7 @@ describe('TeamAssignmentForm Component', () => {
     });
 
     it('should show error if team members fail to load', async () => {
-      (apiClient.get as jest.Mock).mockRejectedValue(new Error('Failed to load team members'));
+      (apiClient.get as vi.MockedFunction).mockRejectedValue(new Error('Failed to load team members'));
 
       render(<TeamAssignmentForm {...mockProps} />);
 

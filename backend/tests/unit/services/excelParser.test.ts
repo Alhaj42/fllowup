@@ -39,11 +39,11 @@ describe('Excel Parser Service', () => {
 
     expect(data).toHaveLength(1);
     expect(data[0]).toMatchObject({
-      clientName: 'Test Client',
-      contractCode: 'CONTRACT-001',
-      builtUpArea: 1000,
-      licenseType: 'Commercial',
-      projectType: 'Studies',
+      'Client Name': 'Test Client',
+      'Contract Code': 'CONTRACT-001',
+      'Built-Up Area': 1000,
+      'License Type': 'Commercial',
+      'Project Type': 'Studies',
     });
   });
 
@@ -79,10 +79,10 @@ describe('Excel Parser Service', () => {
 
     expect(data).toHaveLength(1);
     expect(data[0]).toMatchObject({
-      name: 'John Doe',
-      email: 'john@example.com',
-      position: 'Architect',
-      monthlyCost: 5000,
+      'Name': 'John Doe',
+      'Email': 'john@example.com',
+      'Position': 'Architect',
+      'Monthly Cost': 5000,
     });
   });
 
@@ -114,10 +114,10 @@ describe('Excel Parser Service', () => {
 
     expect(data).toHaveLength(1);
     expect(data[0]).toMatchObject({
-      projectCode: 'CONTRACT-001',
-      phase: 'Studies',
-      taskCode: 'TASK-001',
-      description: 'Initial design review',
+      'Project Code': 'CONTRACT-001',
+      'Phase': 'Studies',
+      'Task Code': 'TASK-001',
+      'Description': 'Initial design review',
       'Duration (Days)': 15,
     });
   });

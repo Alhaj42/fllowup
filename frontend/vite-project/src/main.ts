@@ -5,6 +5,6 @@ import './style.css'
 
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
-    <App />
+    <App></App>
   </StrictMode>,
 )

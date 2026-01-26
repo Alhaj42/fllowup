@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist", "src/api/routes/importRoutes.ts.disabled", "src/services/excelImportService.ts.disabled"]
+}

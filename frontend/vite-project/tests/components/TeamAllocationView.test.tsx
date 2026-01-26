@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+import '@testing-library/jest-dom';
 import TeamAllocationView from '../../src/components/TeamAllocationView';
 import apiClient from '../../src/services/api';
 
-jest.mock('../../src/services/api');
+vi.mock('../../src/services/api');
 
 describe('TeamAllocationView Component', () => {
   const mockAllocations = {
@@ -64,12 +66,12 @@ describe('TeamAllocationView Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Rendering', () => {
     it('should render summary statistics', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -82,7 +84,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should render allocation table with headers', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -93,7 +95,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should render individual team member allocations', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -103,7 +105,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should render allocation percentages', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -115,7 +117,7 @@ describe('TeamAllocationView Component', () => {
 
   describe('Over-allocation Indicators', () => {
     it('should show warning indicator for over-allocated members', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -127,7 +129,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should show OK indicator for properly allocated members', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -138,7 +140,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should show warning indicator for unallocated members', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -149,7 +151,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should highlight over-allocated summary count', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -160,7 +162,7 @@ describe('TeamAllocationView Component', () => {
 
   describe('Assignment Details', () => {
     it('should render expandable assignment details', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -171,7 +173,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should show assignment details on expand', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -187,7 +189,7 @@ describe('TeamAllocationView Component', () => {
 
   describe('Filtering', () => {
     it('should render filter controls', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -196,7 +198,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should call API with filter parameters on filter change', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -213,7 +215,7 @@ describe('TeamAllocationView Component', () => {
 
   describe('Loading States', () => {
     it('should show loading spinner while fetching data', () => {
-      (apiClient.get as jest.Mock).mockImplementation(() => new Promise(() => {}));
+      (apiClient.get as vi.MockedFunction).mockImplementation(() => new Promise(() => {}));
 
       render(<TeamAllocationView />);
 
@@ -222,7 +224,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should hide loading state after data loads', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -234,7 +236,7 @@ describe('TeamAllocationView Component', () => {
 
   describe('Error States', () => {
     it('should show error message on API failure', async () => {
-      (apiClient.get as jest.Mock).mockRejectedValue(new Error('API Error'));
+      (apiClient.get as vi.MockedFunction).mockRejectedValue(new Error('API Error'));
 
       render(<TeamAllocationView />);
 
@@ -244,7 +246,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should show retry button on error', async () => {
-      (apiClient.get as jest.Mock).mockRejectedValue(new Error('API Error'));
+      (apiClient.get as vi.MockedFunction).mockRejectedValue(new Error('API Error'));
 
       render(<TeamAllocationView />);
 
@@ -254,7 +256,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should retry API call on retry button click', async () => {
-      (apiClient.get as jest.Mock)
+      (apiClient.get as vi.MockedFunction)
         .mockRejectedValueOnce(new Error('API Error'))
         .mockResolvedValueOnce({ data: mockAllocations });
 
@@ -275,7 +277,7 @@ describe('TeamAllocationView Component', () => {
 
   describe('Empty States', () => {
     it('should show empty state when no allocations exist', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({
         data: {
           totalTeamMembers: 10,
           allocatedMembers: 0,
@@ -290,7 +292,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should show message when no team members exist', async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({
         data: {
           totalTeamMembers: 0,
           allocatedMembers: 0,
@@ -307,24 +309,24 @@ describe('TeamAllocationView Component', () => {
 
   describe('Auto-refresh', () => {
     it('should auto-refresh allocations at specified interval', async () => {
-      jest.useFakeTimers();
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      vi.useFakeTimers();
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView autoRefresh={true} refreshInterval={30000} />);
 
       expect(apiClient.get).toHaveBeenCalledTimes(1);
 
-      jest.advanceTimersByTime(30000);
+      vi.advanceTimersByTime(30000);
 
       expect(apiClient.get).toHaveBeenCalledTimes(2);
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 
   describe('Accessibility', () => {
     it('should have proper table structure with headers', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -333,7 +335,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should have proper ARIA labels', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 
@@ -344,7 +346,7 @@ describe('TeamAllocationView Component', () => {
     });
 
     it('should be keyboard navigable', () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockAllocations });
+      (apiClient.get as vi.MockedFunction).mockResolvedValue({ data: mockAllocations });
 
       render(<TeamAllocationView />);
 

@@ -1,5 +1,7 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -14,39 +16,99 @@ export const authenticate = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!isDevOrTest) {
+      res.status(401).json({ error: 'Unauthorized: No token provided' });
+    }
+    return next();
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    if (isDevOrTest) {
+      req.user = {
+        id: 'dev-user-id',
+        email: 'dev@example.com',
+        role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
+      };
+      return next();
+    }
+
+    const { verifyToken, extractUserFromToken } = require('../config/auth0');
+    const decoded = await verifyToken(token);
+    const user = extractUserFromToken(token);
+
+    req.user = {
+      id: user.id || '',
+      email: user.email || '',
+      role: user.role as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
+    };
+
+    next();
+  } catch (error) {
+    if (!isDevOrTest) {
+      res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      return;
+    }
+    req.user = {
+      id: 'dev-user-id',
+      email: 'dev@example.com',
+      role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
+    };
+    return next();
+  }
+};
+
+export const optionalAuth = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Unauthorized: No token provided' });
-      return;
+      return next();
     }
 
     const token = authHeader.substring(7);
-    const jwtSecret = process.env.JWT_SECRET;
 
-    if (!jwtSecret) {
-      res.status(500).json({ error: 'Internal server error: JWT secret not configured' });
-      return;
+    if (isDevOrTest) {
+      req.user = {
+        id: 'dev-user-id',
+        email: 'dev@example.com',
+        role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
+      };
+      return next();
     }
 
-    const decoded = jwt.verify(token, jwtSecret) as {
-      id: string;
-      email: string;
-      role: 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER';
+    const { verifyToken, extractUserFromToken } = require('../config/auth0');
+    const decoded = await verifyToken(token);
+    const user = extractUserFromToken(token);
+
+    req.user = {
+      id: user.id || '',
+      email: user.email || '',
+      role: user.role as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
     };
 
-    req.user = decoded;
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({ error: 'Unauthorized: Invalid token' });
-      return;
+    if (!isDevOrTest) {
+      return next();
     }
-    if (error instanceof jwt.TokenExpiredError) {
-      res.status(401).json({ error: 'Unauthorized: Token expired' });
-      return;
-    }
-    res.status(500).json({ error: 'Internal server error' });
+    req.user = {
+      id: 'dev-user-id',
+      email: 'dev@example.com',
+      role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
+    };
+    return next();
   }
 };

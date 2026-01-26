@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuditEntityType } from '@prisma/client';
-import AuditLogService from '../services/auditLogService';
+import { Role } from '@prisma/client';
+import { AuditLogService } from '../services/auditLogService';
 import { AuthRequest } from './auth';
 
-export const auditMiddleware = (entityType: AuditEntityType) => {
-  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const auditMiddleware = (entityType: string) => {
+  return async(req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     const originalSend = res.send;
     const originalJson = res.json;
 
@@ -14,7 +14,7 @@ export const auditMiddleware = (entityType: AuditEntityType) => {
     const logAudit = async () => {
       if (!req.user || statusCode >= 400) return;
 
-      const entityId = req.params.id || (res.locals.entityId as string);
+      const entityId = req.params.id as string || (res.locals.entityId as string);
       if (!entityId) return;
 
       try {
@@ -22,7 +22,8 @@ export const auditMiddleware = (entityType: AuditEntityType) => {
           await AuditLogService.logCreate(
             entityType,
             entityId,
-            req.user.id,
+            req.user!.id as string,
+            req.user!.role,
             req.body
           );
         } else if (req.method === 'PUT' || req.method === 'PATCH') {
@@ -30,7 +31,8 @@ export const auditMiddleware = (entityType: AuditEntityType) => {
           await AuditLogService.logUpdate(
             entityType,
             entityId,
-            req.user.id,
+            req.user!.id as string,
+            req.user!.role,
             originalData,
             req.body
           );
@@ -38,7 +40,8 @@ export const auditMiddleware = (entityType: AuditEntityType) => {
           await AuditLogService.logDelete(
             entityType,
             entityId,
-            req.user.id,
+            req.user!.id as string,
+            req.user!.role,
             res.locals.originalData
           );
         }

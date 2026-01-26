@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { AppError } from './errorHandler';
 import { AuthRequest } from './auth';
 
@@ -26,7 +26,7 @@ export const checkVersionConflict = () => {
       }
 
       const currentVersion = req.body.version;
-      const entityId = req.params.id;
+      const entityId = req.params.id as string;
 
       if (!currentVersion && req.method !== 'DELETE') {
         return next();
@@ -42,21 +42,22 @@ export const checkVersionConflict = () => {
         return next();
       }
 
-      const entityName = req.path.split('/')[2];
-      const modelName = entityName?.slice(0, -1);
+      const pathParts = req.path.split('/');
+      const entityName = pathParts[3]; // Get entity name from /api/v1/{entity}/{id}
+      const modelName = entityName?.slice(0, -1); // Remove 's' from plural (projects -> project)
 
       if (!modelName) {
         return next();
       }
 
-      const model: Record<string, unknown> = prisma[modelName as keyof PrismaClient];
+      const model: any = prisma[modelName as keyof PrismaClient];
 
       if (!model || typeof (model.findUnique as () => unknown) !== 'function') {
         return next();
       }
 
       const existingEntity = await (model.findUnique as (args: { where: { id: string } }) => Promise<{ version: number } | null>)({
-        where: { id: entityId },
+        where: { id: entityId as string },
       });
 
       if (!existingEntity) {

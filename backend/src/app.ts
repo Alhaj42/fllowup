@@ -17,11 +17,12 @@ export const setupRoutes = (): void => {
   });
 
   app.use('/api/v1', require('./api/routes/index').default);
+  app.use('/api/v1', require('./api/routes/assignmentRoutesV2').default);
+  app.use('/api/v1/team', require('./api/routes/teamRoutes').default);
   app.use('/api/v1/projects', require('./api/routes/projectRoutes').default);
-  app.use('/api/v1/phases', require('./api/routes/assignmentRoutes').default);
-  app.use('/api/v1', require('./api/routes/requirementRoutes').default);
   app.use('/api/v1/requirements', require('./api/routes/requirementRoutes').default);
-  app.use('/api/v1', require('./api/routes/importRoutes').default);
+  // app.use('/api/v1', require('./api/routes/importRoutes').default);
+  // Excel import not required per spec - fresh SaaS platform
 };
 
 export default app;

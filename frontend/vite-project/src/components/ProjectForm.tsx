@@ -74,6 +74,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadClients = async () => {
@@ -165,6 +166,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
+    setSuccessMessage(null);
 
     if (!validate()) {
       return;
@@ -179,12 +181,19 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       const response = await apiClient[method]<any>(endpoint, formData);
 
       if (response.status >= 200 && response.status < 300) {
+        const successMsg = mode === 'create' 
+          ? 'Project created successfully!' 
+          : 'Project updated successfully!';
+        setSuccessMessage(successMsg);
         onSuccess?.(response.data);
-        navigate(`/projects/${response.data.id}`);
+        setTimeout(() => {
+          setSuccessMessage(null);
+          navigate(`/projects/${response.data.id}`);
+        }, 2000);
       } else {
         setSubmitError('Failed to save project. Please try again.');
       }
-    } catch (error: {
+    } catch (error: any) {
       console.error('Failed to save project:', error);
       setSubmitError('Failed to save project. Please try again.');
     } finally {
@@ -207,6 +216,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         <Typography variant="h6" gutterBottom>
           {mode === 'create' ? 'Create Project' : 'Edit Project'}
         </Typography>
+
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        )}
 
         {submitError && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>

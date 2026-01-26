@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppThemeProvider } from './components/ThemeProvider';
 import { useAuthStore } from './state/authStore';
 import Dashboard from './pages/Dashboard';
+import ProjectDetail from './pages/ProjectDetail';
 import './style.css';
 
 function App() {
@@ -14,7 +15,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/projects/:id" element={<div>Project Detail - Coming Soon</div>} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/login" element={<div>Login - Coming Soon</div>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

@@ -1,51 +1,51 @@
-import { PrismaClient, AuditEntityType } from '@prisma/client';
-import AuditLogService from './auditLogService';
+import { PrismaClient, ProjectRequirement, Role, AuditAction } from '@prisma/client';
 import logger from '../utils/logger';
+import AuditLogService from './auditLogService';
+import { prisma } from './prismaClient';
 
 export interface CreateRequirementInput {
-  description: string;
-  sortOrder?: number;
+  title: string;
+  description?: string;
+  priority: string;
 }
 
 export interface UpdateRequirementInput {
+  title?: string;
   description?: string;
-  isCompleted?: boolean;
-  sortOrder?: number;
+  priority?: string;
+  status?: string;
+  metAt?: Date | null;
 }
 
 class RequirementService {
   private prisma: PrismaClient;
 
   constructor() {
-    this.prisma = new PrismaClient({});
+    this.prisma = prisma;
   }
 
   async createRequirement(
     input: CreateRequirementInput,
     projectId: string,
-    userId: string
-  ) {
+    userId: string,
+    userRole: Role
+  ): Promise<ProjectRequirement> {
     try {
-      const maxSortOrder = await this.prisma.projectRequirement.aggregate({
-        where: { projectId },
-        _max: { sortOrder: true },
-      });
-
-      const nextSortOrder = (maxSortOrder._max.sortOrder ?? 0) + 1;
-
       const requirement = await this.prisma.projectRequirement.create({
         data: {
           projectId,
+          title: input.title,
           description: input.description,
-          sortOrder: input.sortOrder ?? nextSortOrder,
-          isCompleted: false,
+          priority: input.priority,
+          status: 'PENDING',
         },
       });
 
       await AuditLogService.logCreate(
-        AuditEntityType.PROJECT_REQUIREMENT,
+        'ProjectRequirement',
         requirement.id,
         userId,
+        userRole,
         requirement
       );
 
@@ -61,8 +61,9 @@ class RequirementService {
   async updateRequirement(
     id: string,
     input: UpdateRequirementInput,
-    userId: string
-  ) {
+    userId: string,
+    userRole: Role
+  ): Promise<ProjectRequirement> {
     try {
       const existing = await this.prisma.projectRequirement.findUnique({
         where: { id },
@@ -72,31 +73,16 @@ class RequirementService {
         throw new Error('Requirement not found');
       }
 
-      const updateData: any = {};
-
-      if (input.description !== undefined) {
-        updateData.description = input.description;
-      }
-
-      if (input.sortOrder !== undefined) {
-        updateData.sortOrder = input.sortOrder;
-      }
-
-      if (input.isCompleted !== undefined && input.isCompleted && !existing.isCompleted) {
-        updateData.isCompleted = true;
-        updateData.completedAt = new Date();
-        updateData.completedBy = userId;
-      }
-
       const requirement = await this.prisma.projectRequirement.update({
         where: { id },
-        data: updateData,
+        data: input,
       });
 
       await AuditLogService.logUpdate(
-        AuditEntityType.PROJECT_REQUIREMENT,
+        'ProjectRequirement',
         id,
         userId,
+        userRole,
         existing,
         requirement
       );
@@ -110,7 +96,12 @@ class RequirementService {
     }
   }
 
-  async completeRequirement(id: string, isCompleted: boolean, userId: string) {
+  async completeRequirement(
+    id: string,
+    isCompleted: boolean,
+    userId: string,
+    userRole: Role
+  ): Promise<ProjectRequirement> {
     try {
       const existing = await this.prisma.projectRequirement.findUnique({
         where: { id },
@@ -120,41 +111,40 @@ class RequirementService {
         throw new Error('Requirement not found');
       }
 
-      const updateData: any = {};
-
-      if (isCompleted) {
-        updateData.isCompleted = true;
-        updateData.completedAt = new Date();
-        updateData.completedBy = userId;
-      } else {
-        updateData.isCompleted = false;
-        updateData.completedAt = null;
-        updateData.completedBy = null;
-      }
+      const status = isCompleted ? 'COMPLETED' : 'PENDING';
+      const metAt = isCompleted ? new Date() : null;
 
       const requirement = await this.prisma.projectRequirement.update({
         where: { id },
-        data: updateData,
+        data: {
+          status,
+          metAt,
+        },
       });
 
-      await AuditLogService.logUpdate(
-        AuditEntityType.PROJECT_REQUIREMENT,
+      await AuditLogService.logStatusChange(
+        'ProjectRequirement',
         id,
         userId,
-        existing,
-        requirement
+        userRole,
+        existing.status,
+        status
       );
 
-      logger.info('Requirement completion status updated', { requirementId: id, isCompleted });
+      logger.info('Requirement completion status updated', { requirementId: id, status });
 
       return requirement;
     } catch (error) {
-      logger.error('Failed to update requirement completion', { error, id, isCompleted });
+      logger.error('Failed to complete requirement', { error, id, isCompleted });
       throw error;
     }
   }
 
-  async deleteRequirement(id: string, userId: string) {
+  async deleteRequirement(
+    id: string,
+    userId: string,
+    userRole: Role
+  ): Promise<void> {
     try {
       const requirement = await this.prisma.projectRequirement.findUnique({
         where: { id },
@@ -169,9 +159,10 @@ class RequirementService {
       });
 
       await AuditLogService.logDelete(
-        AuditEntityType.PROJECT_REQUIREMENT,
+        'ProjectRequirement',
         id,
         userId,
+        userRole,
         requirement
       );
 
@@ -182,38 +173,19 @@ class RequirementService {
     }
   }
 
-  async getProjectRequirements(projectId: string, userId: string) {
+  async getRequirementsByProject(projectId: string): Promise<ProjectRequirement[]> {
     try {
-      const project = await this.prisma.project.findUnique({
-        where: { id: projectId },
-      });
-
-      if (!project) {
-        throw new Error('Project not found');
-      }
-
       const requirements = await this.prisma.projectRequirement.findMany({
         where: { projectId },
-        include: {
-          completedByUser: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-        orderBy: { sortOrder: 'asc' },
+        orderBy: { title: 'asc' },
       });
-
-      logger.info('Project requirements retrieved successfully', { projectId, count: requirements.length });
 
       return requirements;
     } catch (error) {
-      logger.error('Failed to get project requirements', { error, projectId });
+      logger.error('Failed to get requirements', { error, projectId });
       throw error;
     }
   }
 }
 
-export default RequirementService;
+export default new RequirementService();

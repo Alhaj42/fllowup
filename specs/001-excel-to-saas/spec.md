@@ -147,15 +147,23 @@ Users need to generate various reports including client reports, employee summar
 
 ### Edge Cases
 
-- What happens when a team member is assigned to more than 100% capacity?
-- How does the system handle projects that are put on hold or cancelled?
-- What happens when project phases are completed out of order?
-- How does the system handle historical data migration from Excel (date formats, missing data, inconsistencies)?
-- What happens when a user with limited permissions tries to edit a project they don't own?
-- How does the system handle simultaneous edits to the same project by multiple users?
-- What happens when project costs are deleted or modified retroactively?
-- How does the system handle timezone differences for global teams?
-- What happens when tasks are deleted or have their durations changed after a project is in progress?
+1. **Team member over-allocation (>100%)**: System MUST display visual warning (red indicator) on TeamAllocationView, prevent saving assignments that would exceed 100% capacity, and suggest available team members or alternative allocation percentages.
+
+2. **Project put on hold or cancelled**: System MUST change project status to "On Hold" or "Cancelled", stop progress calculations, suspend task timers, prevent new assignments, and retain all historical data for reporting. On-hold projects can be reactivated with resume date tracking.
+
+3. **Project phases completed out of order**: System MUST allow flexible phase progression, track actual completion dates independent of planned sequence, flag non-linear phase transitions in audit logs, and support custom phase ordering per project type if configured.
+
+4. **Historical Excel data migration inconsistencies**: System MUST use validation rules from migrationValidator.ts, log all data quality issues, provide migration report with success/error statistics, preserve original Excel data in S3 for audit, and allow manual correction through admin interface before finalizing migration.
+
+5. **Limited permissions editing restricted projects**: System MUST check user role and project ownership via authorization middleware (authz.ts), return 403 Forbidden for unauthorized edits, display appropriate error message "You do not have permission to edit this project", and allow read-only view for all authenticated users.
+
+6. **Simultaneous edits by multiple users**: System MUST use optimistic locking with version field on Project, Phase, Task, Assignment entities, return 409 Conflict on version mismatch, provide "Refresh to see latest changes" option, and support conflict resolution dialog showing both versions.
+
+7. **Retroactive cost modifications**: System MUST maintain cost entry history via AuditLog, recalculate project totals on cost changes, flag retroactive changes in modification history, allow cost corrections only by MANAGER role, and preserve original cost records for audit.
+
+8. **Timezone differences for global teams**: System MUST store all dates in UTC timezone, display dates in user's local timezone (detected via browser or profile), show timezone indicator on all date fields, and support timezone configuration in user preferences.
+
+9. **Task deletion or duration changes in-progress projects**: System MUST validate task dependencies before deletion, warn if task has dependent tasks or cost entries, recalculate phase progress after task changes, maintain audit trail of task modifications, and require MANAGER approval for deleting tasks with associated costs.
 
 ## Requirements
 
@@ -197,11 +205,11 @@ Users need to generate various reports including client reports, employee summar
 
 - **Phase**: Represents a project phase (Studies, Design, etc.) with attributes including phase name, start date, duration, team leader assignment, team member assignments, tasks, and status (planned, in progress, complete)
 
-- **Team Member**: Represents an employee with attributes including name, position, region, grade, level, email, and monthly cost
+- **User/Team Member**: Represents an employee with authentication credentials (User) and profile data (TeamMember) including name, position, region, grade, level, email, and monthly cost
 
 - **Task**: Represents a unit of work within a phase with attributes including task code, description, duration, status, and assigned team members
 
-- **Client**: Represents a company or organization requesting projects with attributes including name, contact information, and contract details
+- **Client**: Represents a company or organization with name, contact name/email/phone, address, and region; has many projects and references region configuration
 
 - **Cost Entry**: Represents cost data for a project with attributes including project ID, phase ID, employee ID, period (month), and cost amount
 

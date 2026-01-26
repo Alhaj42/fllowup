@@ -35,3 +35,40 @@ logs/
 
 # Cache
 .cache/
+
+# Package manager locks
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Prisma
+.prisma/
+prisma/migrations/
+
+# Redis dumps
+dump.rdb
+
+# Secrets
+*.pem
+*.key
+*.crt
+credentials.json
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Vite
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup

@@ -5,6 +5,7 @@ Auto-generated from all feature plans. Last updated: 2026-01-21
 ## Active Technologies
 - Node.js 20+ (Backend), React 18+ (Frontend), TypeScript for both (001-excel-to-saas)
 - PostgreSQL 16+ (Primary DB), Redis 7+ (Caching), AWS S3 (Object Storage) (001-excel-to-saas)
+- PostgreSQL 16+ (Primary DB), Redis 7+ (Caching), AWS S3 (Object Storage for future file uploads) (002-001-excel-to-saas-i-do-not-want-to-pars-date-from-excel-i-want-to-convert-excel-to-full-saas-excel-are-no-using-in-my-firm)
 
 - Node.js 20+ (Backend), React 18+ (Frontend), TypeScript, PostgreSQL 16+, Prisma 5+, Auth0 (OAuth 2.0/OIDC), Express.js, Redis 7+, AWS S3, SheetJS (xlsx), ExcelJS, PDFKit, Winston, Prometheus, Jaeger, Jest, Supertest, Playwright, Material-UI v5+, Vite, Zustand (001-excel-to-saas)
 
@@ -35,6 +36,7 @@ Node.js/React/TypeScript: Follow standard conventions
 - Use proper error handling with try/catch
 
 ## Recent Changes
+- 002-001-excel-to-saas-i-do-not-want-to-pars-date-from-excel-i-want-to-convert-excel-to-full-saas-excel-are-no-using-in-my-firm: Added Node.js 20+ (Backend), React 18+ (Frontend), TypeScript for both
 - 001-excel-to-saas: Added Node.js 20+ (Backend), React 18+ (Frontend), TypeScript for both
 
 - 001-excel-to-saas: Added Node.js 20+ (Backend), React 18+ (Frontend), TypeScript, PostgreSQL 16+, Prisma 5+, Auth0, Express.js, Redis, AWS S3, SheetJS, ExcelJS, PDFKit, Winston, Prometheus, Jaeger, Jest, Supertest, Playwright, Material-UI v5+, Vite, Zustand

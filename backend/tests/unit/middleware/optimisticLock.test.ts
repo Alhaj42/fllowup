@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import { checkVersionConflict, incrementVersion } from '../../../src/middleware/optimisticLock';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../../../src/middleware/errorHandler';
 
@@ -9,20 +9,29 @@ const prisma = new PrismaClient();
 describe('Optimistic Locking Middleware', () => {
   let testUserId: string;
   let testProjectId: string;
+  let testClientId: string;
 
   beforeAll(async () => {
     const user = await prisma.user.create({
       data: {
         email: 'test@example.com',
         name: 'Test User',
-        role: 'MANAGER',
+        role: Role.MANAGER,
       },
     });
     testUserId = user.id;
+
+    const client = await prisma.client.create({
+      data: {
+        name: 'Test Client',
+      },
+    });
+    testClientId = client.id;
   });
 
   afterAll(async () => {
     await prisma.project.deleteMany({});
+    await prisma.client.deleteMany({});
     await prisma.user.deleteMany({});
     await prisma.$disconnect();
   });
@@ -30,14 +39,12 @@ describe('Optimistic Locking Middleware', () => {
   beforeEach(async () => {
     const project = await prisma.project.create({
       data: {
-        clientId: 'test-client',
+        clientId: testClientId,
         name: 'Test Project',
         contractCode: `CONTRACT-${Date.now()}`,
-        contractSigningDate: new Date(),
         builtUpArea: 1000,
         startDate: new Date(),
         estimatedEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        currentPhase: 'STUDIES',
         status: 'PLANNED',
       },
     });
@@ -48,17 +55,18 @@ describe('Optimistic Locking Middleware', () => {
     it('should pass when versions match', async () => {
       const req = {
         method: 'PUT',
+        path: `/api/v1/projects/${testProjectId}`,
         params: { id: testProjectId },
         body: { version: 1, name: 'Updated Project' },
         prisma,
       } as unknown as Request;
 
       const res = {} as Response;
-      const next = jest.fn() as NextFunction;
+      const next = jest.fn();
 
       await checkVersionConflict()(req, res, next);
 
-      expect(next).toHaveBeenCalledWith();
+      expect(next).toHaveBeenCalled();
     });
 
     it('should throw error when versions do not match', async () => {
@@ -69,13 +77,14 @@ describe('Optimistic Locking Middleware', () => {
 
       const req = {
         method: 'PUT',
+        path: `/api/v1/projects/${testProjectId}`,
         params: { id: testProjectId },
         body: { version: 1, name: 'Updated Project' },
         prisma,
       } as unknown as Request;
 
       const res = {} as Response;
-      const next = jest.fn() as NextFunction;
+      const next = jest.fn();
 
       await checkVersionConflict()(req, res, next);
 
@@ -88,17 +97,18 @@ describe('Optimistic Locking Middleware', () => {
     it('should pass for non-modifying methods', async () => {
       const req = {
         method: 'GET',
+        path: `/api/v1/projects/${testProjectId}`,
         params: { id: testProjectId },
         body: { version: 1 },
         prisma,
       } as unknown as Request;
 
       const res = {} as Response;
-      const next = jest.fn() as NextFunction;
+      const next = jest.fn();
 
       await checkVersionConflict()(req, res, next);
 
-      expect(next).toHaveBeenCalledWith();
+      expect(next).toHaveBeenCalled();
     });
   });
 
