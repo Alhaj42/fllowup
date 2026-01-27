@@ -132,9 +132,11 @@ class TimelineService {
             orderBy: {
               startDate: 'asc'
             }
+          }
         },
         orderBy: {
           startDate: 'asc'
+          }
         }
       });
 
@@ -308,7 +310,6 @@ class TimelineService {
       // Fetch projects active in the month
       const projects = await this.prisma.project.findMany({
         where: {
-          deletedAt: null,
           OR: [
             {
               startDate: { lte: endDate },
@@ -316,8 +317,7 @@ class TimelineService {
             },
             {
               startDate: { lte: endDate },
-              startDate: { gte: startDate },
-              estimatedEndDate: { gte: startDate }
+              actualEndDate: { gte: startDate }
             }
           ]
         },

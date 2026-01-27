@@ -96,7 +96,8 @@ class ReportService {
             startDate: 'asc'
           }
         }
-      });
+      }
+    });
 
     if (!project) {
       throw new Error('Project not found');
@@ -156,7 +157,8 @@ class ReportService {
             startDate: 'asc'
           }
         }
-      });
+      }
+    });
 
     if (!project) {
       throw new Error('Project not found');
