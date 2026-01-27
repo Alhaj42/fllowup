@@ -87,8 +87,4 @@ export default defineConfig({
       localsConvention: 'camelCase',
     },
   },
-  // Performance improvements
-  esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'ignore' },
-  },
 });

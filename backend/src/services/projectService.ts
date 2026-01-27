@@ -2,7 +2,6 @@ import { PrismaClient, Project, ProjectStatus, PhaseStatus, Role, AuditAction } 
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
-import cacheService from './cacheService';
 
 export interface CreateProjectInput {
   clientId: string;
@@ -141,11 +140,6 @@ class ProjectService {
         project
       );
 
-      // Invalidate cache
-      await cacheService.del(cacheService.projectDetailKey(id));
-      await cacheService.del(cacheService.projectDashboardKey(id));
-      await cacheService.delPattern('projects:list:*');
-
       logger.info('Project updated successfully', { projectId: id });
 
       return project;
@@ -182,75 +176,67 @@ class ProjectService {
     userId: string
   ): Promise<ProjectsResponse> {
     try {
-      const cacheKey = cacheService.projectListKey(filter);
+      const page = filter.page ?? 1;
+      const limit = filter.limit ?? 50;
+      const skip = (page - 1) * limit;
 
-      return await cacheService.getOrSet(
-        cacheKey,
-        async () => {
-          const page = filter.page ?? 1;
-          const limit = filter.limit ?? 50;
-          const skip = (page - 1) * limit;
+      const where: any = {};
 
-          const where: any = {};
+      if (filter.status) {
+        where.status = filter.status;
+      }
 
-          if (filter.status) {
-            where.status = filter.status;
-          }
+      if (filter.clientId) {
+        where.clientId = filter.clientId;
+      }
 
-          if (filter.clientId) {
-            where.clientId = filter.clientId;
-          }
+      if (filter.search) {
+        where.OR = [
+          { name: { contains: filter.search, mode: 'insensitive' } },
+          { contractCode: { contains: filter.search, mode: 'insensitive' } },
+        ];
+      }
 
-          if (filter.search) {
-            where.OR = [
-              { name: { contains: filter.search, mode: 'insensitive' } },
-              { contractCode: { contains: filter.search, mode: 'insensitive' } },
-            ];
-          }
-
-          const [projects, total] = await Promise.all([
-            this.prisma.project.findMany({
-              where,
-              skip,
-              take: limit,
-              orderBy: {
-                startDate: 'desc',
-              },
-              include: {
-                client: true,
-                phases: {
+      const [projects, total] = await Promise.all([
+        this.prisma.project.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: {
+            startDate: 'desc',
+          },
+          include: {
+            client: true,
+            phases: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                tasks: {
                   select: {
-                    id: true,
-                    name: true,
                     status: true,
-                    tasks: {
-                      select: {
-                        status: true,
-                      }
-                    }
-                  },
-                },
+                  }
+                }
               },
-            }),
-            this.prisma.project.count({ where }),
-          ]);
+            },
+          },
+        }),
+        this.prisma.project.count({ where }),
+      ]);
 
-          const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / limit);
 
-          return {
-            projects: projects.map(project => ({
-              ...project,
-              clientName: project.client?.name ?? '',
-              progress: this.calculateProjectProgress(project.phases),
-            })),
-            total,
-            page,
-            limit,
-            totalPages,
-          };
-        },
-        600 // Cache for 10 minutes
-      );
+      return {
+        projects: projects.map(project => ({
+          ...project,
+          clientName: project.client?.name ?? '',
+          progress: this.calculateProjectProgress(project.phases),
+        })),
+        total,
+        page,
+        limit,
+        totalPages,
+      };
     } catch (error) {
       logger.error('Failed to get projects', { error, filter });
       throw error;
@@ -259,67 +245,59 @@ class ProjectService {
 
   async getProjectDashboard(id: string, userId: string) {
     try {
-      const cacheKey = cacheService.projectDashboardKey(id);
-
-      return await cacheService.getOrSet(
-        cacheKey,
-        async () => {
-          const project = await this.prisma.project.findUnique({
-            where: { id },
+      const project = await this.prisma.project.findUnique({
+        where: { id },
+        include: {
+          client: true,
+          phases: {
             include: {
-              client: true,
-              phases: {
+              tasks: true,
+              assignments: {
                 include: {
-                  tasks: true,
-                  assignments: {
-                    include: {
-                      user: true,
-                    },
-                  },
+                  user: true,
                 },
               },
-              requirements: true,
             },
-          });
-
-          if (!project) {
-            throw new Error('Project not found');
-          }
-
-          const phasesData = project.phases.map(phase => ({
-            id: phase.id,
-            name: phase.name,
-            status: phase.status,
-            progress: this.calculatePhaseProgress(phase),
-            taskCount: phase.tasks.length,
-            completedTasks: phase.tasks.filter(t => t.status === 'COMPLETE').length,
-            teamCount: new Set(phase.assignments.map(a => a.userId)).size,
-            totalCost: 0, // Costs are now tracked at project level only
-          }));
-
-          const totalTasks = project.phases.reduce((sum, p) => sum + p.tasks.length, 0);
-          const completedTasks = project.phases.reduce(
-            (sum, p) => sum + p.tasks.filter(t => t.status === 'COMPLETE').length,
-            0
-          );
-
-          return {
-            project: {
-              ...project,
-              clientName: project.client?.name ?? '',
-              progress: this.calculateProjectProgress(project.phases),
-            },
-            phases: phasesData,
-            summary: {
-              totalPhases: project.phases.length,
-              totalTasks,
-              completedTasks,
-              overallProgress: this.calculateProjectProgress(project.phases),
-            },
-          };
+          },
+          requirements: true,
         },
-        300 // Cache for 5 minutes
+      });
+
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      const phasesData = project.phases.map(phase => ({
+        id: phase.id,
+        name: phase.name,
+        status: phase.status,
+        progress: this.calculatePhaseProgress(phase),
+        taskCount: phase.tasks.length,
+        completedTasks: phase.tasks.filter(t => t.status === 'COMPLETE').length,
+        teamCount: new Set(phase.assignments.map(a => a.userId)).size,
+        totalCost: 0, // Costs are now tracked at project level only
+      }));
+
+      const totalTasks = project.phases.reduce((sum, p) => sum + p.tasks.length, 0);
+      const completedTasks = project.phases.reduce(
+        (sum, p) => sum + p.tasks.filter(t => t.status === 'COMPLETE').length,
+        0
       );
+
+      return {
+        project: {
+          ...project,
+          clientName: project.client?.name ?? '',
+          progress: this.calculateProjectProgress(project.phases),
+        },
+        phases: phasesData,
+        summary: {
+          totalPhases: project.phases.length,
+          totalTasks,
+          completedTasks,
+          overallProgress: this.calculateProjectProgress(project.phases),
+        },
+      };
     } catch (error) {
       logger.error('Failed to get project dashboard', { error, id });
       throw error;
@@ -347,11 +325,6 @@ class ProjectService {
         role,
         project
       );
-
-      // Invalidate cache
-      await cacheService.del(cacheService.projectDetailKey(id));
-      await cacheService.del(cacheService.projectDashboardKey(id));
-      await cacheService.delPattern('projects:list:*');
 
       logger.info('Project deleted successfully', { projectId: id });
     } catch (error) {
@@ -527,72 +500,10 @@ class ProjectService {
       }
 
       return phase.tasks.every(t => t.status === 'COMPLETED');
+    } catch (error) {
+      logger.error('Failed to check phase completion', { error, phaseId });
+      throw error;
     }
-
-  async getTimelineData(projectId: string) {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: {
-        client: true,
-        phases: {
-          include: {
-            assignments: {
-              include: {
-                teamMember: true
-              }
-            },
-            tasks: {
-              include: {
-                assignedTeamMember: true
-              }
-            },
-            orderBy: {
-              startDate: 'asc'
-            }
-          }
-        }
-      }
-    });
-
-    if (!project) {
-      throw new Error('Project not found');
-    }
-
-    const timelineData = project.phases.map(phase => ({
-      phaseId: phase.id,
-      phaseName: phase.phaseName,
-      startDate: phase.startDate,
-      endDate: phase.endDate,
-      status: phase.status,
-      progress: this.calculatePhaseProgress(phase),
-      tasks: phase.tasks.map(task => ({
-        taskId: task.id,
-        code: task.code || '',
-        description: task.description,
-        status: task.status,
-        startDate: task.startDate,
-        endDate: task.endDate,
-        assignedTeamMember: task.assignedTeamMember?.name || null,
-        duration: task.duration
-      })),
-      teamLeader: phase.assignments
-        .filter(a => a.role === 'TEAM_LEADER')
-        .map(a => ({
-          teamMemberId: a.teamMemberId,
-          teamMemberName: a.teamMember?.name || null,
-          role: a.role,
-          workingPercentage: a.workingPercentage
-        }))
-    }));
-
-    await AuditLogService.logUpdate(
-      projectId,
-      userId,
-      'Manager',
-      'Timeline data retrieved'
-    );
-
-    return timelineData;
   }
 
   async completePhase(phaseId: string, userId: string, role: Role): Promise<void> {
