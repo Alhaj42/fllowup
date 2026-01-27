@@ -1,4 +1,14 @@
-# Minimal Nixpacks configuration for Vite React app
-# Node version is controlled by .nvmrc and package.json engines
+[phases.setup]
+nixPkgs = ["nodejs_22"]
 
+[phases.build]
+cmd = "npm run build"
 
+[phases.start]
+cmd = "npm run start"
+
+[start]
+cmd = "npm run start"
+
+[variables]
+NODE_ENV = "production"
