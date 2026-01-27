@@ -1,25 +1,2 @@
-# Dependencies
-node_modules
-
-# Git
-.git
-.gitignore
-
-# Tests
-coverage
-.playwright
-test-results
-
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
-
-# Build artifacts (for Dockerfile)
-dist
-
-# Environment
-.env
-.env.local
-.env.*.local
+# No build configuration - let Railway use default Node.js builder
+# This ensures compatibility and automatic dependency installation
