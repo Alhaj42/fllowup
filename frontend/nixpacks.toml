@@ -5,4 +5,4 @@ nixPkgs = ["nodejs_22"]
 cmd = "npm run build"
 
 [phases.start]
-cmd = "npx caddy file-server --root dist --listen :80"
+cmd = "node index.js"
