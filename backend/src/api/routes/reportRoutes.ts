@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { reportService } from '../../services/reportService';
-import { authz } from '../../middleware/authz';
+import { authorize } from '../../middleware/authz';
 import { auditMiddleware } from '../../middleware/auditMiddleware';
 import { asyncHandler } from '../../utils/asyncHandler';
 

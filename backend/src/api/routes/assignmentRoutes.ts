@@ -79,7 +79,7 @@ router.post(
           role,
           workingPercentage,
           startDate: parsedStartDate,
-          endDate: parsedEndDate,
+          endDate: parsedEndDate || undefined,
         },
         userId,
         userRole

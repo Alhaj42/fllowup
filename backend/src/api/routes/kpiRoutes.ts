@@ -88,10 +88,10 @@ router.get(
     }
 
     const kpiEntries = await kpiService.getEmployeeKPIs(employeeId, {
-      projectId: projectId as string,
-      phaseId: phaseId as string,
-      startDate: startDate as string,
-      endDate: endDate as string,
+      projectId: typeof projectId === "string" ? projectId : projectId[0],
+      phaseId: typeof phaseId === "string" ? phaseId : phaseId[0],
+      startDate: typeof startDate === "string" ? startDate : startDate[0],
+      endDate: typeof endDate === "string" ? endDate : endDate[0],
     });
 
     res.json(kpiEntries);
@@ -130,7 +130,7 @@ router.put(
     }
 
     const updatedKPI = await kpiService.updateKPIEntry(
-      id,
+      id as string,
       {
         delayedDays,
         clientModifications,
@@ -156,7 +156,7 @@ router.delete(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
 
-    await kpiService.deleteKPIEntry(id, req.user!.id, req.user!.role);
+    await kpiService.deleteKPIEntry(id as string, req.user!.id, req.user!.role);
 
     res.status(204).send();
   })
