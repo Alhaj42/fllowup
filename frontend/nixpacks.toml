@@ -9,4 +9,3 @@ cmd = "npm run start"
 
 [variables]
 NODE_ENV = "production"
-NIXPACKS_NODE_VERSION = "22.12.0"
