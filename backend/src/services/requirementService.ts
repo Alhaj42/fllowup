@@ -1,4 +1,4 @@
-import { PrismaClient, ProjectRequirement, Role, AuditAction } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -28,7 +28,7 @@ class RequirementService {
     input: CreateRequirementInput,
     projectId: string,
     userId: string,
-    userRole: Role
+    userRole: UserRole
   ): Promise<ProjectRequirement> {
     try {
       const requirement = await this.prisma.projectRequirement.create({
@@ -62,7 +62,7 @@ class RequirementService {
     id: string,
     input: UpdateRequirementInput,
     userId: string,
-    userRole: Role
+    userRole: UserRole
   ): Promise<ProjectRequirement> {
     try {
       const existing = await this.prisma.projectRequirement.findUnique({
@@ -100,7 +100,7 @@ class RequirementService {
     id: string,
     isCompleted: boolean,
     userId: string,
-    userRole: Role
+    userRole: UserRole
   ): Promise<ProjectRequirement> {
     try {
       const existing = await this.prisma.projectRequirement.findUnique({
@@ -143,7 +143,7 @@ class RequirementService {
   async deleteRequirement(
     id: string,
     userId: string,
-    userRole: Role
+    userRole: UserRole
   ): Promise<void> {
     try {
       const requirement = await this.prisma.projectRequirement.findUnique({

@@ -1,4 +1,4 @@
-import { PrismaClient, Assignment, AssignmentRole, Role, AuditAction } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -60,7 +60,7 @@ class AssignmentService {
   async createAssignment(
     input: CreateAssignmentInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<Assignment> {
     try {
       const assignment = await this.prisma.assignment.create({
@@ -149,7 +149,7 @@ class AssignmentService {
     id: string,
     input: UpdateAssignmentInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<Assignment> {
     try {
       const existing = await this.prisma.assignment.findUnique({
@@ -190,7 +190,7 @@ class AssignmentService {
   async deleteAssignment(
     id: string,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<void> {
     try {
       const assignment = await this.prisma.assignment.findUnique({

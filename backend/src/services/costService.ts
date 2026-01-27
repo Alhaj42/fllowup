@@ -1,4 +1,4 @@
-import { PrismaClient, CostType, Role } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -47,7 +47,7 @@ class CostService {
   async createCostEntry(
     input: CreateCostEntryInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<any> {
     try {
       // Check for duplicate cost entry
@@ -100,7 +100,7 @@ class CostService {
     id: string,
     input: UpdateCostEntryInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<any> {
     try {
       const existing = await this.prisma.costEntry.findUnique({
@@ -142,7 +142,7 @@ class CostService {
   async deleteCostEntry(
     id: string,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<void> {
     try {
       const costEntry = await this.prisma.costEntry.findUnique({

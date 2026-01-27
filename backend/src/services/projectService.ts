@@ -1,4 +1,4 @@
-import { PrismaClient, Project, ProjectStatus, PhaseStatus, Role, AuditAction } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -58,7 +58,7 @@ class ProjectService {
   async createProject(
     input: CreateProjectInput,
     userId: string,
-    role: Role
+    role: UserRole
   ): Promise<Project> {
     try {
       const project = await this.prisma.project.create({
@@ -104,7 +104,7 @@ class ProjectService {
     id: string,
     input: UpdateProjectInput,
     userId: string,
-    role: Role
+    role: UserRole
   ): Promise<Project> {
     try {
       const existingProject = await this.prisma.project.findUnique({
@@ -304,7 +304,7 @@ class ProjectService {
     }
   }
 
-  async deleteProject(id: string, userId: string, role: Role): Promise<void> {
+  async deleteProject(id: string, userId: string, role: UserRole): Promise<void> {
     try {
       const project = await this.prisma.project.findUnique({
         where: { id },
@@ -345,7 +345,7 @@ class ProjectService {
     return Math.round(totalProgress / phases.length);
   }
 
-  async createPhases(projectId: string, phaseNames: string[], userId: string, role: Role): Promise<any[]> {
+  async createPhases(projectId: string, phaseNames: string[], userId: string, role: UserRole): Promise<any[]> {
     try {
       const phases = await Promise.all(
         phaseNames.map(async (name, index) => {
@@ -381,7 +381,7 @@ class ProjectService {
     phaseId: string,
     updates: { name?: string; status?: PhaseStatus; teamLeaderId?: string | null },
     userId: string,
-    role: Role
+    role: UserRole
   ): Promise<any> {
     try {
       const phase = await this.prisma.phase.findUnique({ where: { id: phaseId } });
@@ -416,7 +416,7 @@ class ProjectService {
     }
   }
 
-  async deletePhase(phaseId: string, userId: string, role: Role): Promise<void> {
+  async deletePhase(phaseId: string, userId: string, role: UserRole): Promise<void> {
     try {
       const phase = await this.prisma.phase.findUnique({ where: { id: phaseId } });
 
@@ -435,7 +435,7 @@ class ProjectService {
     }
   }
 
-  async assignTeamLeader(phaseId: string, teamLeaderId: string, userId: string, role: Role): Promise<any> {
+  async assignTeamLeader(phaseId: string, teamLeaderId: string, userId: string, role: UserRole): Promise<any> {
     try {
       const phase = await this.prisma.phase.update({
         where: { id: phaseId },
@@ -460,7 +460,7 @@ class ProjectService {
     }
   }
 
-  async removeTeamLeader(phaseId: string, userId: string, role: Role): Promise<any> {
+  async removeTeamLeader(phaseId: string, userId: string, role: UserRole): Promise<any> {
     try {
       const phase = await this.prisma.phase.update({
         where: { id: phaseId },
@@ -506,7 +506,7 @@ class ProjectService {
     }
   }
 
-  async completePhase(phaseId: string, userId: string, role: Role): Promise<void> {
+  async completePhase(phaseId: string, userId: string, role: UserRole): Promise<void> {
     try {
       const canComplete = await this.checkPhaseCompletion(phaseId);
       if (!canComplete) {

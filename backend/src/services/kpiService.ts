@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -34,7 +34,7 @@ export interface KPISummary {
     id: string;
     name: string;
     email: string;
-    role: Role;
+    role: UserRole;
   };
   totalKPIs: number;
   averageScore: number | null;
@@ -81,7 +81,7 @@ class KPIService {
   async createKPIEntry(
     input: CreateKPIEntryInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ) {
     try {
       // Validate employee exists
@@ -219,7 +219,7 @@ class KPIService {
     id: string,
     input: UpdateKPIEntryInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ) {
     try {
       const existing = await this.prisma.kPIEntry.findUnique({
@@ -284,7 +284,7 @@ class KPIService {
   async deleteKPIEntry(
     id: string,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ) {
     try {
       const kpiEntry = await this.prisma.kPIEntry.findUnique({

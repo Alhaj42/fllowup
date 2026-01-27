@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+.playwright
+test-results
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Build artifacts (for Dockerfile)
+dist
+
+# Environment
+.env
+.env.local
+.env.*.local

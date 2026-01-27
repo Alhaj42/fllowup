@@ -1,22 +1,20 @@
-import { AuditAction, Role, AuditLog as AuditLogModel } from '@prisma/client';
+import { AuditAction, AuditLog as AuditLogModel, AuditEntityType } from '@prisma/client';
 import { prisma } from './prismaClient';
 
 interface AuditLogData {
   entityType: string;
   entityId: string;
   action: AuditAction;
-  userId: string;
-  role: Role;
-  details?: string;
+  changedBy: string;
+  changes?: unknown;
 }
 
 interface AuditLogWithChanges {
   entityType: string;
   entityId: string;
   action: AuditAction;
-  userId: string;
-  role: Role;
-  details?: string;
+  changedBy: string;
+  changes?: unknown;
   before?: unknown;
   after?: unknown;
 }
@@ -25,12 +23,11 @@ export const AuditLogService = {
   async createAuditLog(data: AuditLogData): Promise<AuditLogModel> {
     return prisma.auditLog.create({
       data: {
-        entityType: data.entityType,
+        entityType: data.entityType as AuditEntityType,
         entityId: data.entityId,
         action: data.action,
-        userId: data.userId,
-        role: data.role,
-        details: data.details,
+        changedBy: data.changedBy,
+        changes: data.changes ? data.changes : undefined,
       },
     });
   },
@@ -39,17 +36,16 @@ export const AuditLogService = {
     entityType: string,
     entityId: string,
     userId: string,
-    role: Role,
+    _role: string,
     data: unknown
   ) {
-    const details = JSON.stringify({ after: data });
+    const changes = JSON.stringify({ after: data });
     return this.createAuditLog({
-      entityType,
+      entityType: entityType as AuditEntityType,
       entityId,
       action: AuditAction.CREATE,
-      userId,
-      role,
-      details,
+      changedBy: userId,
+      changes,
     });
   },
 
@@ -57,18 +53,17 @@ export const AuditLogService = {
     entityType: string,
     entityId: string,
     userId: string,
-    role: Role,
+    _role: string,
     before: unknown,
     after: unknown
   ) {
-    const details = JSON.stringify({ before, after });
+    const changes = JSON.stringify({ before, after });
     return this.createAuditLog({
-      entityType,
+      entityType: entityType as AuditEntityType,
       entityId,
       action: AuditAction.UPDATE,
-      userId,
-      role,
-      details,
+      changedBy: userId,
+      changes,
     });
   },
 
@@ -76,17 +71,16 @@ export const AuditLogService = {
     entityType: string,
     entityId: string,
     userId: string,
-    role: Role,
+    _role: string,
     data: unknown
   ) {
-    const details = JSON.stringify({ before: data });
+    const changes = JSON.stringify({ before: data });
     return this.createAuditLog({
-      entityType,
+      entityType: entityType as AuditEntityType,
       entityId,
       action: AuditAction.DELETE,
-      userId,
-      role,
-      details,
+      changedBy: userId,
+      changes,
     });
   },
 
@@ -94,35 +88,31 @@ export const AuditLogService = {
     entityType: string,
     entityId: string,
     userId: string,
-    role: Role,
+    _role: string,
     oldStatus: string,
     newStatus: string
   ) {
-    const details = JSON.stringify({ oldStatus, newStatus });
+    const changes = JSON.stringify({ oldStatus, newStatus });
     return this.createAuditLog({
-      entityType,
+      entityType: entityType as AuditEntityType,
       entityId,
-      action: AuditAction.STATUS_CHANGE,
-      userId,
-      role,
-      details,
+      action: AuditAction.UPDATE,
+      changedBy: userId,
+      changes,
     });
   },
 
-  async getAuditLogsByEntity(
-    entityType: string,
-    entityId: string,
-  ): Promise<AuditLogModel[]> {
+  async getAuditLogsByEntity(entityType: string, entityId: string): Promise<AuditLogModel[]> {
     return prisma.auditLog.findMany({
       where: {
-        entityType,
+        entityType: entityType as AuditEntityType,
         entityId,
       },
       orderBy: {
         timestamp: 'desc',
       },
       include: {
-        user: {
+        changedByUser: {
           select: {
             id: true,
             email: true,
@@ -136,7 +126,7 @@ export const AuditLogService = {
   async getAuditLogsByUser(userId: string, limit = 100): Promise<AuditLogModel[]> {
     return prisma.auditLog.findMany({
       where: {
-        userId,
+        changedBy: userId,
       },
       orderBy: {
         timestamp: 'desc',
@@ -152,7 +142,7 @@ export const AuditLogService = {
       },
       take: limit,
       include: {
-        user: {
+        changedByUser: {
           select: {
             id: true,
             email: true,

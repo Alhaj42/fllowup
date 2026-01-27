@@ -1,4 +1,4 @@
-import { PrismaClient, Assignment, AssignmentRole, Role, AuditAction } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -37,13 +37,13 @@ class TeamService {
    * Assign a team member to a phase with allocation validation
    * @param input Assignment details
    * @param currentUserId ID of user making the change
-   * @param currentUserRole Role of user making the change
+   * @param currentUserRole UserRole of user making the change
    * @returns Created assignment
    */
   async assignTeamMember(
     input: AssignTeamMemberInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<Assignment> {
     try {
       // Validate dates
@@ -137,14 +137,14 @@ class TeamService {
    * @param id Assignment ID
    * @param input Fields to update
    * @param currentUserId ID of user making the change
-   * @param currentUserRole Role of user making the change
+   * @param currentUserRole UserRole of user making the change
    * @returns Updated assignment
    */
   async updateAssignment(
     id: string,
     input: UpdateAssignmentInput,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<Assignment> {
     try {
       // Validate dates if both are provided
@@ -341,12 +341,12 @@ class TeamService {
    * Remove an assignment
    * @param id Assignment ID
    * @param currentUserId ID of user making the change
-   * @param currentUserRole Role of user making the change
+   * @param currentUserRole UserRole of user making the change
    */
   async removeAssignment(
     id: string,
     currentUserId: string,
-    currentUserRole: Role
+    currentUserRole: UserRole
   ): Promise<void> {
     try {
       const assignment = await this.prisma.assignment.findUnique({

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { PrismaClient, Project, Phase, Role, AuditAction } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -28,7 +28,7 @@ export interface TimelineData {
   teamAssignments: Array<{
     teamMemberId: string;
     teamMemberName: string;
-    role: Role;
+    role: UserRole;
     allocation: number;
     phaseId: string;
   }>;

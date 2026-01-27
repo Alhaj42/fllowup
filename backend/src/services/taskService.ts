@@ -1,4 +1,4 @@
-import { PrismaClient, Task, TaskStatus, UserRole, AuditAction } from '@prisma/client';
+d/import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -116,7 +116,7 @@ class TaskService {
         id: string,
         input: UpdateTaskInput,
         userId: string,
-        role: Role
+        role: UserRole
     ): Promise<Task> {
         try {
             const existingTask = await this.prisma.task.findUnique({
@@ -184,7 +184,7 @@ class TaskService {
     async deleteTask(
         id: string,
         userId: string,
-        role: Role
+        role: UserRole
     ): Promise<void> {
         try {
             const task = await this.prisma.task.findUnique({

@@ -1,10 +1,12 @@
 import prisma from '../utils/prisma';
+import { ConfigurationCategory } from '@prisma/client';
 
 interface ConfigurationItem {
   id: string;
-  category: string;
-  key: string;
-  value: string;
+  category: ConfigurationCategory;
+  name: string;
+  code: string | null;
+  description: string | null;
   isActive: boolean;
   sortOrder: number;
   createdAt: Date;
@@ -12,14 +14,17 @@ interface ConfigurationItem {
 }
 
 interface CreateConfigInput {
-  category: string;
-  key: string;
-  value: string;
+  category: ConfigurationCategory;
+  name: string;
+  code?: string;
+  description?: string;
   sortOrder?: number;
 }
 
 interface UpdateConfigInput {
-  value?: string;
+  name?: string;
+  code?: string;
+  description?: string;
   isActive?: boolean;
   sortOrder?: number;
 }
@@ -54,27 +59,33 @@ export class ConfigurationService {
   }
 
   async updateConfiguration(
-    category: string,
-    key: string,
+    category: ConfigurationCategory,
+    name: string,
     updates: UpdateConfigInput
   ): Promise<ConfigurationItem> {
     return prisma.configurationItem.update({
       where: {
-        category_key: {
-          category,
-          key,
+        category_name: {
+          category: category,
+          name: name,
         },
       },
-      data: updates,
+      data: {
+        ...updates,
+        name: name,
+      },
     });
   }
 
-  async deleteConfiguration(category: string, key: string): Promise<ConfigurationItem> {
+  async deleteConfiguration(
+    category: ConfigurationCategory,
+    name: string
+  ): Promise<ConfigurationItem> {
     return prisma.configurationItem.delete({
       where: {
-        category_key: {
-          category,
-          key,
+        category_name: {
+          category: category,
+          name: name,
         },
       },
     });
@@ -82,7 +93,7 @@ export class ConfigurationService {
 
   async bulkCreateConfiguration(items: CreateConfigInput[]): Promise<{ count: number }> {
     const result = await prisma.configurationItem.createMany({
-      data: items,
+      data: items as any,
       skipDuplicates: true,
     });
     return { count: result.count };
