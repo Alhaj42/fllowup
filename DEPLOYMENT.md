@@ -85,6 +85,8 @@ cd /home/alhaj42/clawd/fllowup/frontend
 railway up
 ```
 
+> **Note:** Frontend uses Railway's nixpacks builder which should resolve compatibility issues.
+
 ### Step 6: Database Migration
 
 After backend deploys successfully:
