@@ -1,0 +1,13 @@
+[phases.build]
+cmds = ["npm run build"]
+
+[phases.start]
+cmds = ["npm run preview"]
+
+[static]
+# Static site settings for Vite preview
+publish = "dist"
+
+[build.env]
+# Force Node.js 20+ as required by @vitejs/plugin-react@5.1.2
+NODE_VERSION = "20.12.0"
