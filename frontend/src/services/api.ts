@@ -1,130 +1,350 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+/**
+ * API Service with Retry Logic
+ * Implements exponential backoff for failed requests
+ * Supports different retry strategies for different error types
+ */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { logger } from '../utils/logger';
 
-const CACHE_TTL = 5000;
+export interface ApiRequestConfig extends AxiosRequestConfig {
+  skipRetry?: boolean;
+  maxRetries?: number;
+  initialDelay?: number;
+  backoffMultiplier?: number;
+}
 
-type CachedValue<T> = {
-  data: T;
-  timestamp: number;
-};
+export interface ApiError extends Error {
+  response?: AxiosResponse;
+  config?: AxiosRequestConfig;
+  status?: number;
+  data?: any;
+}
 
-const requestCache = new Map<string, CachedValue<unknown>>();
+export const isNetworkError = (error: any): boolean => {
+  if (axios.isCancel(error)) return false;
 
-const getCacheKey = (method: string, url: string, params?: any): string => {
-  const paramsStr = params ? JSON.stringify(params) : '';
-  return `${method}:${url}:${paramsStr}`;
-};
-
-const getCachedData = <T>(key: string): T | null => {
-  const cached = requestCache.get(key) as CachedValue<T> | undefined;
-  if (!cached) return null;
-  
-  const now = Date.now();
-  if (now - cached.timestamp > CACHE_TTL) {
-    requestCache.delete(key);
-    return null;
+  if (!error.response) {
+    return true; // Network error, timeout, or axios config error
   }
-  
-  return cached.data;
+
+  const status = error.response?.status;
+  return status >= 500 || status === 429; // Server errors or rate limiting
 };
 
-const setCachedData = <T>(key: string, data: T): void => {
-  requestCache.set(key, { data, timestamp: Date.now() });
+export const shouldRetry = (error: any, attempt: number, config: ApiRequestConfig): boolean => {
+  if (config.skipRetry) return false;
+
+  if (attempt >= (config.maxRetries || 3)) {
+    return false;
+  }
+
+  // Don't retry on client errors (4xx)
+  if (error.response && error.response.status >= 400 && error.response.status < 500) {
+    return false;
+  }
+
+  // Don't retry on network errors for non-GET requests (to avoid duplicate actions)
+  if (isNetworkError(error) && config.method && config.method.toUpperCase() !== 'GET') {
+    return false;
+  }
+
+  // Retry on network errors and server errors
+  return isNetworkError(error) || (error.response?.status || 0) >= 500;
 };
 
+export const delay = (ms: number): Promise<void> => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+/**
+ * API Client with retry logic
+ */
 class ApiClient {
-  private client: AxiosInstance;
+  private axiosInstance: AxiosInstance;
+  private defaultConfig: ApiRequestConfig;
 
-  constructor() {
-    this.client = axios.create({
-      baseURL: API_BASE_URL,
+  constructor(baseURL: string) {
+    this.axiosInstance = axios.create({
+      baseURL,
+      timeout: 30000, // 30 seconds default
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 30000,
     });
 
-    this.setupInterceptors();
-  }
+    this.defaultConfig = {
+      maxRetries: 3,
+      initialDelay: 1000, // 1 second
+      backoffMultiplier: 2, // Double the delay each retry
+    };
 
-  private setupInterceptors() {
-    this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('auth_token');
-        const isDev = import.meta.env.VITE_API_BASE_URL?.includes('localhost');
-        
-        if (token && config.headers && !isDev) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+    // Add request interceptor for logging
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        logger.info('API Request', {
+          url: config.url,
+          method: config.method,
+          headers: config.headers,
+        });
         return config;
       },
-      (error: AxiosError) => {
+      (error) => {
+        logger.error('API Request Error', {
+          url: error.config.url,
+          method: error.config.method,
+          message: error.message,
+        });
         return Promise.reject(error);
       }
     );
 
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => response,
-      (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login';
-        }
+    // Add response interceptor for logging
+    this.axiosInstance.interceptors.response.use(
+      (response) => {
+        const status = response.status;
+        const logLevel = status >= 400 && status < 500 ? 'warn' : 'info';
+
+        logger[logLevel]('API Response', {
+          url: response.config.url,
+          method: response.config.method,
+          status,
+          duration: response.headers['x-response-time'] || 'N/A',
+        });
+
+        return response;
+      },
+      (error) => {
+        logger.error('API Response Error', {
+          url: error.config.url,
+          method: error.config.method,
+          status: error.response?.status,
+          message: error.message,
+        });
         return Promise.reject(error);
       }
     );
   }
 
-  async get<T>(url: string, params?: any): Promise<T> {
-    const cacheKey = getCacheKey('GET', url, params);
-    const cached = getCachedData<T>(cacheKey);
-    
-    if (cached) {
-      return cached;
+  /**
+   * Execute API request with retry logic
+   * @param config Request configuration
+   * @returns Promise with response data
+   */
+  async request<T = any>(config: ApiRequestConfig): Promise<T> {
+    const requestConfig: ApiRequestConfig = {
+      ...this.defaultConfig,
+      ...config,
+    };
+
+    let attempt = 1;
+    let lastError: any;
+
+    while (attempt <= requestConfig.maxRetries) {
+      try {
+        logger.info(`API Request Attempt ${attempt}`, {
+          url: requestConfig.url,
+          method: requestConfig.method,
+        });
+
+        const response: AxiosResponse<T> = await this.axiosInstance(requestConfig);
+
+        // Success - return response data
+        return response.data;
+      } catch (error: any) {
+        lastError = error;
+        logger.warn(`API Request Attempt ${attempt} Failed`, {
+          url: requestConfig.url,
+          method: requestConfig.method,
+          error: error.message,
+          attempt,
+        });
+
+        // Check if we should retry
+        if (!shouldRetry(error, attempt, requestConfig)) {
+          // Don't retry - throw the error
+          throw error;
+        }
+
+        // Calculate delay for retry with exponential backoff
+        const delayMs = requestConfig.initialDelay * Math.pow(requestConfig.backoffMultiplier, attempt - 1);
+
+        logger.info(`Retrying after ${delayMs}ms...`, {
+          url: requestConfig.url,
+          attempt,
+          nextAttempt: attempt + 1,
+        });
+
+        // Wait before retrying
+        await delay(delayMs);
+        attempt++;
+      }
     }
 
-    const response = await this.client.get<T>(url, { params });
-    setCachedData(cacheKey, response.data);
-    return response.data;
-  }
-
-  async post<T>(url: string, data?: any): Promise<T> {
-    const response = await this.client.post<T>(url, data);
-    return response.data;
-  }
-
-  async put<T>(url: string, data?: any): Promise<T> {
-    const response = await this.client.put<T>(url, data);
-    return response.data;
-  }
-
-  async patch<T>(url: string, data?: any): Promise<T> {
-    const response = await this.client.patch<T>(url, data);
-    return response.data;
-  }
-
-  async delete<T>(url: string): Promise<T> {
-    const response = await this.client.delete<T>(url);
-    return response.data;
-  }
-
-  clearCache(): void {
-    requestCache.clear();
-  }
-
-  invalidateCache(pattern: string): void {
-    const keysToDelete: string[] = [];
-    
-    requestCache.forEach((_, key) => {
-      if (key.includes(pattern)) {
-        keysToDelete.push(key);
-      }
+    // All retries failed - throw the last error
+    logger.error(`API Request Failed After ${requestConfig.maxRetries} Attempts`, {
+      url: requestConfig.url,
+      method: requestConfig.method,
+      lastError: lastError.message,
     });
-    
-    keysToDelete.forEach(key => requestCache.delete(key));
+
+    throw lastError;
+  }
+
+  /**
+   * Execute multiple API requests concurrently
+   * @param configs Array of request configurations
+   * @returns Promise with array of responses
+   */
+  async requestAll<T = any>(configs: Array<ApiRequestConfig>): Promise<T[]> {
+    try {
+      const responses = await Promise.all(
+        configs.map(config => this.request<T>(config))
+      );
+      return responses;
+    } catch (error: any) {
+      logger.error('Batch API Request Failed', { error, requestCount: configs.length });
+      throw error;
+    }
+  }
+
+  /**
+   * Execute multiple API requests with concurrency control
+   * @param configs Array of request configurations
+   * @param concurrency Maximum number of concurrent requests (default: 5)
+   * @returns Promise with array of responses
+   */
+  async requestBatch<T = any>(
+    configs: Array<ApiRequestConfig>,
+    concurrency: number = 5
+  ): Promise<T[]> {
+    const results: Array<{ success: boolean; data?: T; error?: any }> = new Array(configs.length);
+
+    for (let i = 0; i < configs.length; i += concurrency) {
+      const batch = configs.slice(i, i + concurrency);
+      const batchPromises = batch.map((config, index) => {
+        const promiseIndex = i + index;
+        return this.request<T>(config)
+          .then(data => ({
+            success: true,
+            data,
+            promiseIndex,
+          }))
+          .catch(error => ({
+            success: false,
+            error,
+            promiseIndex,
+          }));
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      batchResults.forEach(result => {
+        results[result.promiseIndex] = result;
+      });
+    }
+
+    // Check if any requests failed
+    const failedRequests = results.filter(r => !r.success);
+    if (failedRequests.length > 0) {
+      logger.warn('Batch API Request Partially Failed', {
+        totalRequests: configs.length,
+        failedRequests: failedRequests.length,
+      });
+    }
+
+    // Extract successful results
+    return results
+      .filter(r => r.success)
+      .map(r => r.data as T);
+  }
+
+  /**
+   * GET request
+   */
+  async get<T = any>(url: string, config: ApiRequestConfig = {}): Promise<T> {
+    return this.request<T>({
+      url,
+      method: 'GET',
+      ...config,
+    });
+  }
+
+  /**
+   * POST request
+   */
+  async post<T = any>(url: string, data?: any, config: ApiRequestConfig = {}): Promise<T> {
+    return this.request<T>({
+      url,
+      method: 'POST',
+      data,
+      ...config,
+    });
+  }
+
+  /**
+   * PUT request
+   */
+  async put<T = any>(url: string, data?: any, config: ApiRequestConfig = {}): Promise<T> {
+    return this.request<T>({
+      url,
+      method: 'PUT',
+      data,
+      ...config,
+    });
+  }
+
+  /**
+   * DELETE request
+   */
+  async delete<T = any>(url: string, config: ApiRequestConfig = {}): Promise<T> {
+    return this.request<T>({
+      url,
+      method: 'DELETE',
+      ...config,
+    });
+  }
+
+  /**
+   * PATCH request
+   */
+  async patch<T = any>(url: string, data?: any, config: ApiRequestConfig = {}): Promise<T> {
+    return this.request<T>({
+      url,
+      method: 'PATCH',
+      data,
+      ...config,
+    });
+  }
+
+  /**
+   * Set authentication token for all requests
+   */
+  setAuthToken(token: string): void {
+    this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    logger.info('Auth token set');
+  }
+
+  /**
+   * Clear authentication token
+   */
+  clearAuthToken(): void {
+    delete this.axiosInstance.defaults.headers.common['Authorization'];
+    logger.info('Auth token cleared');
+  }
+
+  /**
+   * Update default configuration
+   */
+  updateConfig(config: Partial<ApiRequestConfig>): void {
+    this.defaultConfig = {
+      ...this.defaultConfig,
+      ...config,
+    };
   }
 }
 
-export const apiClient = new ApiClient();
+// Create singleton instance
+const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const apiClient = new ApiClient(apiBaseUrl);
+
 export default apiClient;

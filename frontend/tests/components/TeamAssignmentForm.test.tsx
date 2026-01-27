@@ -1,393 +1,472 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import TeamAssignmentForm from '../../src/components/TeamAssignmentForm';
-import { BrowserRouter } from 'react-router-dom';
+import TeamAssignmentForm from '../../../src/components/TeamAssignmentForm';
 
-vi.mock('../../src/services/api', () => ({
-  default: {
-    get: vi.fn(),
+// Mock API
+vi.mock('../../../src/services/api', () => ({
+  api: {
     post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
     delete: vi.fn(),
   },
 }));
 
-vi.mock('../../src/state/authStore', () => ({
-  useAuthStore: vi.fn(() => ({
-    user: { id: 'test-user-id', role: 'MANAGER' },
-    hasRole: vi.fn(() => true),
-  })),
-  hasRole: vi.fn(() => true),
+// Mock router
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
 }));
 
 describe('TeamAssignmentForm Component', () => {
-  const mockTeamMembers = [
-    { id: 'user-1', name: 'Alice Johnson', email: 'alice@example.com' },
-    { id: 'user-2', name: 'Bob Smith', email: 'bob@example.com' },
-    { id: 'user-3', name: 'Carol White', email: 'carol@example.com' },
-  ];
-
-  const mockPhase = {
-    id: 'phase-1',
-    name: 'Studies',
-    projectId: 'project-1',
-    status: 'IN_PROGRESS',
+  const mockTeamMember = {
+    id: 'user-1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'TEAM_MEMBER',
   };
 
-  const mockExistingAssignments = [
-    { id: 'assign-1', userId: 'user-1', phaseId: 'phase-1', workingPercent: 50, role: 'TEAM_MEMBER' },
+  const mockPhases = [
+    {
+      id: 'phase-1',
+      name: 'STUDIES',
+      startDate: '2025-01-01',
+      duration: 90,
+      status: 'IN_PROGRESS',
+    },
+    {
+      id: 'phase-2',
+      name: 'DESIGN',
+      startDate: '2025-04-01',
+      duration: 90,
+      status: 'PLANNED',
+    },
   ];
+
+  const mockCurrentAllocation = 50;
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  const renderWithRouter = (component: React.ReactElement) => {
-    return render(<BrowserRouter>{component}</BrowserRouter>);
-  };
-
-  describe('Form Rendering', () => {
-    it('renders team member selector', async () => {
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-
-      renderWithRouter(
+  describe('Rendering', () => {
+    it('should render form with all required fields', () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
         />
       );
 
-      await waitFor(() => {
-        expect(screen.getByLabelText(/Team Member/i)).toBeInTheDocument();
+      expect(screen.getByLabelText('Phase')).toBeInTheDocument();
+      expect(screen.getByLabelText('Role')).toBeInTheDocument();
+      expect(screen.getByLabelText('Allocation (%)')).toBeInTheDocument();
+      expect(screen.getByLabelText('Start Date')).toBeInTheDocument();
+      expect(screen.getByLabelText('End Date')).toBeInTheDocument();
+    });
+
+    it('should display team member name', () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+    });
+
+    it('should display team member email', () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      expect(screen.getByText('john@example.com')).toBeInTheDocument();
+    });
+
+    it('should display current allocation percentage', () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      expect(screen.getByText(/Current allocation.*50%/)).toBeInTheDocument();
+    });
+
+    it('should render phase options', () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      mockPhases.forEach((phase: any) => {
+        expect(screen.getByText(phase.name)).toBeInTheDocument();
       });
     });
 
-    it('renders allocation percentage input', () => {
-      renderWithRouter(
+    it('should render role options', () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
         />
       );
 
-      expect(screen.getByLabelText(/Allocation Percentage/i)).toBeInTheDocument();
-    });
-
-    it('renders start date input', () => {
-      renderWithRouter(
-        <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
-        />
-      );
-
-      expect(screen.getByLabelText(/Start Date/i)).toBeInTheDocument();
-    });
-
-    it('renders end date input', () => {
-      renderWithRouter(
-        <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
-        />
-      );
-
-      expect(screen.getByLabelText(/End Date/i)).toBeInTheDocument();
-    });
-
-    it('renders submit button', () => {
-      renderWithRouter(
-        <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
-        />
-      );
-
-      expect(screen.getByRole('button', { name: /Assign/i })).toBeInTheDocument();
-    });
-
-    it('renders cancel button', () => {
-      renderWithRouter(
-        <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
-        />
-      );
-
-      expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
+      expect(screen.getByText('Team Member')).toBeInTheDocument();
+      expect(screen.getByText('Team Leader')).toBeInTheDocument();
     });
   });
 
   describe('Form Validation', () => {
-    it('validates team member selection', async () => {
-      const user = userEvent.setup();
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-
-      renderWithRouter(
+    it('should show error for empty phase selection', async () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
         />
       );
 
-      const submitButton = screen.getByRole('button', { name: /Assign/i });
-      await user.click(submitButton);
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Team member is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/phase is required/i)).toBeInTheDocument();
       });
     });
 
-    it('validates allocation percentage range (0-100)', async () => {
-      const user = userEvent.setup();
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-
-      renderWithRouter(
+    it('should show error for allocation < 0', async () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
         />
       );
 
-      const allocationInput = screen.getByLabelText(/Allocation Percentage/i);
-      await user.clear(allocationInput);
-      await user.type(allocationInput, '150');
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '-10' } });
 
-      const submitButton = screen.getByRole('button', { name: /Assign/i });
-      await user.click(submitButton);
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Allocation must be between 0 and 100/i)).toBeInTheDocument();
+        expect(screen.getByText(/allocation must be between 0 and 100/i)).toBeInTheDocument();
       });
     });
 
-    it('validates date sequence', async () => {
-      const user = userEvent.setup();
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-
-      renderWithRouter(
+    it('should show error for allocation > 100', async () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
         />
       );
 
-      const startDateInput = screen.getByLabelText(/Start Date/i);
-      const endDateInput = screen.getByLabelText(/End Date/i);
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '150' } });
 
-      await user.type(startDateInput, '2025-03-01');
-      await user.type(endDateInput, '2025-01-01');
-
-      const submitButton = screen.getByRole('button', { name: /Assign/i });
-      await user.click(submitButton);
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/End date must be after start date/i)).toBeInTheDocument();
+        expect(screen.getByText(/allocation must be between 0 and 100/i)).toBeInTheDocument();
       });
+    });
+
+    it('should show error for end date before start date', async () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      const startDateInput = screen.getByLabelText('Start Date');
+      const endDateInput = screen.getByLabelText('End Date');
+
+      fireEvent.change(startDateInput, { target: { value: '2025-06-01' } });
+      fireEvent.change(endDateInput, { target: { value: '2025-05-01' } });
+
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/end date must be after start date/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should show error for empty start date', async () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      const startDateInput = screen.getByLabelText('Start Date');
+      fireEvent.change(startDateInput, { target: { value: '' } });
+
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/start date is required/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Over-Allocation Warning', () => {
+    it('should show warning when current allocation + new allocation > 100%', () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={80}
+        />
+      );
+
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '30' } });
+
+      expect(screen.getByText(/warning.*over-allocation/i)).toBeInTheDocument();
+      expect(screen.getByText(/would be 110%/i)).toBeInTheDocument();
+    });
+
+    it('should not show warning when allocation is within limits', () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={50}
+        />
+      );
+
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '20' } });
+
+      expect(screen.queryByText(/warning.*over-allocation/i)).not.toBeInTheDocument();
+    });
+
+    it('should display warning in red color', () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={85}
+        />
+      );
+
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '20' } });
+
+      const warning = screen.getByText(/warning/i);
+      expect(warning).toHaveClass('text-red-500');
     });
   });
 
   describe('Form Submission', () => {
-    it('submits valid assignment data', async () => {
-      const user = userEvent.setup();
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-      vi.mocked(api.default.post).mockResolvedValueOnce({
-        status: 201,
-        data: { id: 'new-assign-id' },
-      });
+    it('should call API with correct data on submit', async () => {
+      const { api } = require('../../../src/services/api');
+      api.post.mockResolvedValue({ data: { id: 'new-assignment-id' } });
 
-      const onAssign = vi.fn();
-      renderWithRouter(
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={onAssign}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
         />
       );
 
-      await user.selectOptions(screen.getByLabelText(/Team Member/i), 'user-1');
-      await user.type(screen.getByLabelText(/Allocation Percentage/i), '75');
-      await user.type(screen.getByLabelText(/Start Date/i), '2025-01-01');
+      const phaseSelect = screen.getByLabelText('Phase');
+      const roleSelect = screen.getByLabelText('Role');
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      const startDateInput = screen.getByLabelText('Start Date');
+      const endDateInput = screen.getByLabelText('End Date');
 
-      const submitButton = screen.getByRole('button', { name: /Assign/i });
-      await user.click(submitButton);
+      fireEvent.change(phaseSelect, { target: { value: mockPhases[1].id } });
+      fireEvent.change(roleSelect, { target: { value: 'TEAM_LEADER' } });
+      fireEvent.change(allocationInput, { target: { value: '60' } });
+      fireEvent.change(startDateInput, { target: { value: '2025-04-01' } });
+      fireEvent.change(endDateInput, { target: { value: '2025-06-30' } });
+
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(api.default.post).toHaveBeenCalledWith(
-          `/api/v1/phases/${mockPhase.id}/assignments`,
-          expect.objectContaining({
-            userId: 'user-1',
-            workingPercent: 75,
-          })
-        );
-        expect(onAssign).toHaveBeenCalledWith(expect.objectContaining({
-          id: 'new-assign-id',
-        }));
+        expect(api.post).toHaveBeenCalledWith('/assignments', {
+          phaseId: mockPhases[1].id,
+          teamMemberId: mockTeamMember.id,
+          role: 'TEAM_LEADER',
+          workingPercentage: 60,
+          startDate: '2025-04-01',
+          endDate: '2025-06-30',
+        });
       });
     });
 
-    it('calls onCancel when cancel button clicked', async () => {
-      const user = userEvent.setup();
-      const onCancel = vi.fn();
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
+    it('should show loading state during submission', async () => {
+      const { api } = require('../../../src/services/api');
+      api.post.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: { id: 'new-id' } }), 100)));
 
-      renderWithRouter(
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={onCancel}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
         />
       );
 
-      const cancelButton = screen.getByRole('button', { name: /Cancel/i });
-      await user.click(cancelButton);
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
 
-      expect(onCancel).toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: /loading/i })).toBeInTheDocument();
+    });
+
+    it('should show success message on successful creation', async () => {
+      const { api } = require('../../../src/services/api');
+      api.post.mockResolvedValue({ data: { id: 'new-assignment-id' } });
+
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/assignment created successfully/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should show error message on failed creation', async () => {
+      const { api } = require('../../../src/services/api');
+      api.post.mockRejectedValue({ response: { data: { error: 'Allocation exceeds 100%' } } });
+
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/allocation exceeds 100%/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should navigate back on cancel', async () => {
+      render(
+        <TeamAssignmentForm
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={mockCurrentAllocation}
+        />
+      );
+
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      fireEvent.click(cancelButton);
+
+      expect(mockNavigate).toHaveBeenCalledWith(-1);
     });
   });
 
-  describe('Over-Allocation Detection', () => {
-    it('shows warning when user is over-allocated', async () => {
-      const user = userEvent.setup();
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-      vi.mocked(api.default.get).mockResolvedValueOnce({
-        allocations: [
-          { userId: 'user-1', totalAllocation: 80, isOverAllocated: false },
-        ],
-      });
-
-      renderWithRouter(
+  describe('Override Over-Allocation', () => {
+    it('should show override checkbox when over-allocation detected', () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={90}
         />
       );
 
-      await user.selectOptions(screen.getByLabelText(/Team Member/i), 'user-1');
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '20' } });
 
-      await waitFor(() => {
-        expect(screen.getByText(/User is currently allocated 80%/i)).toBeInTheDocument();
-      });
+      expect(screen.getByLabelText(/override allocation limit/i)).toBeInTheDocument();
     });
 
-    it('blocks submission when over-allocation would exceed 100%', async () => {
-      const user = userEvent.setup();
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-      vi.mocked(api.default.get).mockResolvedValueOnce({
-        allocations: [
-          { userId: 'user-1', totalAllocation: 85, isOverAllocated: false },
-        ],
-      });
-
-      renderWithRouter(
+    it('should disable submit button when over-allocation without override', () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={85}
         />
       );
 
-      await user.selectOptions(screen.getByLabelText(/Team Member/i), 'user-1');
-      await user.type(screen.getByLabelText(/Allocation Percentage/i), '25');
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '20' } });
 
-      const submitButton = screen.getByRole('button', { name: /Assign/i });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Allocation would exceed 100%/i)).toBeInTheDocument();
-        expect(api.default.post).not.toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('Team Leader Mode', () => {
-    it('hides team member selector for non-manager users', async () => {
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-
-      renderWithRouter(
-        <TeamAssignmentForm
-          phase={mockPhase}
-          userRole="TEAM_LEADER"
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
-        />
-      );
-
-      expect(screen.queryByLabelText(/Team Member/i)).not.toBeInTheDocument();
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      expect(submitButton).toBeDisabled();
     });
 
-    it('shows read-only view for existing assignments', async () => {
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-
-      renderWithRouter(
+    it('should enable submit button when override checkbox is checked', () => {
+      render(
         <TeamAssignmentForm
-          phase={mockPhase}
-          existingAssignment={mockExistingAssignments[0]}
-          userRole="TEAM_MEMBER"
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
+          projectId="proj-1"
+          teamMember={mockTeamMember}
+          phases={mockPhases}
+          currentAllocation={85}
         />
       );
 
-      expect(screen.getByText(/Read-only mode/i)).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /Assign/i })).not.toBeInTheDocument();
-    });
-  });
+      const allocationInput = screen.getByLabelText('Allocation (%)');
+      fireEvent.change(allocationInput, { target: { value: '20' } });
 
-  describe('Accessibility', () => {
-    it('has proper form labels and ARIA attributes', async () => {
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
+      const overrideCheckbox = screen.getByLabelText(/override allocation limit/i);
+      fireEvent.click(overrideCheckbox);
 
-      renderWithRouter(
-        <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
-        />
-      );
-
-      const teamMemberInput = screen.getByLabelText(/Team Member/i);
-      expect(teamMemberInput).toHaveAttribute('aria-required');
-
-      const submitButton = screen.getByRole('button', { name: /Assign/i });
-      expect(submitButton).toBeEnabled();
-    });
-
-    it('supports keyboard navigation', async () => {
-      const api = await import('../../src/services/api');
-      vi.mocked(api.default.get).mockResolvedValueOnce({ users: mockTeamMembers });
-
-      renderWithRouter(
-        <TeamAssignmentForm
-          phase={mockPhase}
-          onAssign={vi.fn()}
-          onCancel={vi.fn()}
-        />
-      );
-
-      const submitButton = screen.getByRole('button', { name: /Assign/i });
-      expect(submitButton).toBeInTheDocument();
+      const submitButton = screen.getByRole('button', { name: /assign/i });
+      expect(submitButton).not.toBeDisabled();
     });
   });
 });

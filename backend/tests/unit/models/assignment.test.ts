@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
-import { PrismaClient, AssignmentRole } from '@prisma/client';
+import { PrismaClient, AssignmentRole, PhaseName } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -15,11 +15,19 @@ describe('Assignment Model', () => {
     await prisma.user.deleteMany({});
     await prisma.client.deleteMany({});
 
+    const client = await prisma.client.create({
+      data: {
+        name: 'Test Client',
+        contactEmail: 'test@example.com',
+      },
+    });
+
     const project = await prisma.project.create({
       data: {
-        clientId: (await prisma.client.create({ data: { name: 'Test Client', email: 'test@example.com' } })).id,
+        clientId: client.id,
         contractCode: `UNIT-${Date.now()}-${Math.random()}`,
         name: 'Unit Test Project',
+        contractSigningDate: new Date('2025-01-01'),
         startDate: new Date('2025-01-01'),
         estimatedEndDate: new Date('2025-03-01'),
         builtUpArea: 1000,
@@ -38,8 +46,10 @@ describe('Assignment Model', () => {
     const phase = await prisma.phase.create({
       data: {
         projectId: project.id,
-        name: 'Test Phase',
-        phaseOrder: 1,
+        name: PhaseName.STUDIES,
+        startDate: new Date('2025-01-01'),
+        duration: 60,
+        estimatedEndDate: new Date('2025-03-01'),
         status: 'PLANNED',
       },
     });
@@ -62,9 +72,9 @@ describe('Assignment Model', () => {
       const assignment = await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 50,
+          workingPercentage: 50,
           startDate: new Date('2025-01-01'),
           endDate: new Date('2025-03-01'),
         },
@@ -72,19 +82,19 @@ describe('Assignment Model', () => {
 
       expect(assignment).toHaveProperty('id');
       expect(assignment.phaseId).toBe(testPhase.id);
-      expect(assignment.userId).toBe(testUser.id);
-      expect(assignment.workingPercent).toBe(50);
+      expect(assignment.teamMemberId).toBe(testUser.id);
+      expect(Number(assignment.workingPercentage)).toBe(50);
     });
 
-    it('should enforce unique constraint on phaseId + userId', async () => {
+    it('should enforce unique constraint on phaseId + teamMemberId + role', async () => {
       await prisma.assignment.deleteMany({});
 
       await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 50,
+          workingPercentage: 50,
         },
       });
 
@@ -92,9 +102,9 @@ describe('Assignment Model', () => {
         prisma.assignment.create({
           data: {
             phaseId: testPhase.id,
-            userId: testUser.id,
+            teamMemberId: testUser.id,
             role: AssignmentRole.TEAM_MEMBER,
-            workingPercent: 30,
+            workingPercentage: 30,
           },
         })
       ).rejects.toThrow();
@@ -114,9 +124,9 @@ describe('Assignment Model', () => {
       const assignment = await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: leaderUser.id,
+          teamMemberId: leaderUser.id,
           role: AssignmentRole.TEAM_LEADER,
-          workingPercent: 50,
+          workingPercentage: 50,
           startDate: new Date('2025-01-01'),
           endDate: new Date('2025-03-01'),
         },
@@ -135,9 +145,9 @@ describe('Assignment Model', () => {
       const assignment = await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 50,
+          workingPercentage: 50,
         },
       });
 
@@ -146,15 +156,23 @@ describe('Assignment Model', () => {
       });
 
       expect(assignments).toHaveLength(1);
-      expect(assignments[0].userId).toBe(testUser.id);
+      expect(assignments[0].teamMemberId).toBe(testUser.id);
     });
 
     it('should find assignments by user', async () => {
+      const client2 = await prisma.client.create({
+        data: {
+          name: 'Test Client 3',
+          contactEmail: 'test3@example.com',
+        },
+      });
+
       const project2 = await prisma.project.create({
         data: {
-          clientId: (await prisma.client.create({ data: { name: 'Test Client 3', email: 'test3@example.com' } })).id,
+          clientId: client2.id,
           contractCode: `UNIT-${Date.now()}-${Math.random()}`,
           name: 'Unit Test Project 2',
+          contractSigningDate: new Date('2025-01-01'),
           startDate: new Date('2025-01-01'),
           estimatedEndDate: new Date('2025-03-01'),
           builtUpArea: 1000,
@@ -164,8 +182,10 @@ describe('Assignment Model', () => {
       const phase2 = await prisma.phase.create({
         data: {
           projectId: project2.id,
-          name: 'Test Phase 2',
-          phaseOrder: 1,
+          name: PhaseName.STUDIES,
+          startDate: new Date('2025-01-01'),
+          duration: 60,
+          estimatedEndDate: new Date('2025-03-01'),
           status: 'PLANNED',
         },
       });
@@ -173,35 +193,43 @@ describe('Assignment Model', () => {
       await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 30,
+          workingPercentage: 30,
         },
       });
 
       await prisma.assignment.create({
         data: {
           phaseId: phase2.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 40,
+          workingPercentage: 40,
         },
       });
 
       const userAssignments = await prisma.assignment.findMany({
-        where: { userId: testUser.id },
-        include: { phase: true, user: true },
+        where: { teamMemberId: testUser.id },
+        include: { phase: true, teamMember: true },
       });
 
       expect(userAssignments).toHaveLength(2);
     });
 
     it('should calculate total allocation percentage for user', async () => {
+      const client2 = await prisma.client.create({
+        data: {
+          name: 'Test Client 2',
+          contactEmail: 'test2@example.com',
+        },
+      });
+
       const project2 = await prisma.project.create({
         data: {
-          clientId: (await prisma.client.create({ data: { name: 'Test Client 2', email: 'test2@example.com' } })).id,
+          clientId: client2.id,
           contractCode: `UNIT-${Date.now()}-${Math.random()}`,
           name: 'Unit Test Project 2',
+          contractSigningDate: new Date('2025-01-01'),
           startDate: new Date('2025-01-01'),
           estimatedEndDate: new Date('2025-03-01'),
           builtUpArea: 1000,
@@ -211,8 +239,10 @@ describe('Assignment Model', () => {
       const phase2 = await prisma.phase.create({
         data: {
           projectId: project2.id,
-          name: 'Test Phase 2',
-          phaseOrder: 1,
+          name: PhaseName.STUDIES,
+          startDate: new Date('2025-01-01'),
+          duration: 60,
+          estimatedEndDate: new Date('2025-03-01'),
           status: 'PLANNED',
         },
       });
@@ -220,26 +250,26 @@ describe('Assignment Model', () => {
       await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 60,
+          workingPercentage: 60,
         },
       });
 
       await prisma.assignment.create({
         data: {
           phaseId: phase2.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 30,
+          workingPercentage: 30,
         },
       });
 
       const assignments = await prisma.assignment.findMany({
-        where: { userId: testUser.id },
+        where: { teamMemberId: testUser.id },
       });
 
-      const totalAllocation = assignments.reduce((sum, a) => sum + a.workingPercent, 0);
+      const totalAllocation = assignments.reduce((sum, a) => sum + Number(a.workingPercentage), 0);
 
       expect(totalAllocation).toBe(90);
     });
@@ -250,31 +280,31 @@ describe('Assignment Model', () => {
       await prisma.assignment.deleteMany({});
     });
 
-    it('should update assignment workingPercent', async () => {
+    it('should update assignment workingPercentage', async () => {
       const assignment = await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 50,
+          workingPercentage: 50,
         },
       });
 
       const updated = await prisma.assignment.update({
         where: { id: assignment.id },
-        data: { workingPercent: 75 },
+        data: { workingPercentage: 75 },
       });
 
-      expect(updated.workingPercent).toBe(75);
+      expect(Number(updated.workingPercentage)).toBe(75);
     });
 
     it('should update assignment endDate', async () => {
       const assignment = await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 50,
+          workingPercentage: 50,
           startDate: new Date('2025-01-01'),
           endDate: new Date('2025-03-01'),
         },
@@ -299,9 +329,9 @@ describe('Assignment Model', () => {
       const assignment = await prisma.assignment.create({
         data: {
           phaseId: testPhase.id,
-          userId: testUser.id,
+          teamMemberId: testUser.id,
           role: AssignmentRole.TEAM_MEMBER,
-          workingPercent: 50,
+          workingPercentage: 50,
         },
       });
 

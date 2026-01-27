@@ -182,6 +182,33 @@ router.get('/:id/dashboard',
   }
 );
 
+router.get('/:id/timeline',
+  authenticate,
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const { id } = req.params;
+
+      const timeline = await projectService.getTimelineData(id as string, req.user.id);
+
+      res.json(timeline);
+    } catch (error) {
+      logger.error('Failed to get project timeline', { error, projectId: req.params.id as string });
+      if (error instanceof AppError && error.message === 'Project not found') {
+        res.status(404).json({ error: 'Project not found' });
+      } else if (error instanceof AppError) {
+        res.status(error.statusCode).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Failed to retrieve project timeline' });
+      }
+    }
+  }
+);
+
 router.delete('/:id',
   authenticate,
   async (req: AuthRequest, res: Response): Promise<void> => {

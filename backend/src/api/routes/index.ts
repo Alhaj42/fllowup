@@ -34,15 +34,35 @@ router.get('/', (req, res) => {
 
 // Import route handlers
 import projectRoutes from './projectRoutes';
-router.use('/projects', projectRoutes);
 import phaseRoutes from './phaseRoutes';
-router.use('/phases', phaseRoutes);
 import requirementRoutes from './requirementRoutes';
-router.use('/requirements', requirementRoutes);
 import configurationRoutes from './configurationRoutes';
-router.use('/configuration', configurationRoutes);
 import taskRoutes from './taskRoutes';
-router.use('/', taskRoutes);
+import assignmentRoutes from './assignmentRoutes';
+import reportRoutes from './reportRoutes';
+import kpiRoutes from './kpiRoutes';
+import timelineRoutes from './timelineRoutes';
 
+router.use('/', projectRoutes);
+router.use('/projects', projectRoutes);
+router.use('/phases', phaseRoutes);
+router.use('/projects/:id/timeline', timelineRoutes);
+router.use('/phases', phaseRoutes);
+router.use('/phases/:phaseId/tasks', taskRoutes);
+router.use('/phases/:phaseId/assignments', assignmentRoutes);
+router.use('/projects/:id', projectRoutes);
+router.use('/projects/:id/dashboard', projectRoutes);
+router.use('/projects/:id/timeline', projectRoutes);
+router.use('/assignments', assignmentRoutes);
+router.use('/assignments/:id', assignmentRoutes);
+router.use('/costs', taskRoutes);
+router.use('/costs/:id', taskRoutes);
+router.use('/costs/summary', taskRoutes);
+router.use('/kpis', kpiRoutes);
+router.use('/kpis/:id', kpiRoutes);
+router.use('/kpis/summary', kpiRoutes);
+router.use('/reports', reportRoutes);
+router.use('/configuration', configurationRoutes);
+router.use('/requirements', requirementRoutes);
 
 export default router;
