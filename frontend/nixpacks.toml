@@ -1,2 +1,4 @@
-# Simple Nixpacks configuration for Vite React app
-# Node version will be set via NIXPACKS_NODE_VERSION env var or package.json engines
+# Minimal Nixpacks configuration for Vite React app
+# Node version is controlled by .nvmrc and package.json engines
+
+
