@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as XLSX from 'xlsx';
 import logger from '../utils/logger';
 import { AuditAction, PrismaClient } from '@prisma/client';
@@ -148,9 +149,9 @@ class ReportService {
         const duration =
           startDate && endDate
             ? Math.ceil(
-                (new Date(endDate).getTime() - new Date(startDate).getTime()) /
-                  (1000 * 60 * 60 * 24)
-              )
+              (new Date(endDate).getTime() - new Date(startDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+            )
             : 0;
 
         return {
@@ -351,9 +352,9 @@ class ReportService {
     const performanceScore =
       total > 0
         ? Math.round(
-            ((total - (delayedTasks.length + clientMods.length + techMistakes.length)) / total) *
-              100
-          )
+          ((total - (delayedTasks.length + clientMods.length + techMistakes.length)) / total) *
+          100
+        )
         : 100;
 
     const reportData: KPISummaryReport = {

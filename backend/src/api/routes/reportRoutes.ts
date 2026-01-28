@@ -19,7 +19,7 @@ router.get(
   '/project/:id/follow-up',
   authorize(['MANAGER']),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.id || '';
 
     const report = await reportService.exportProjectFollowUpReportPDF(id, userId);
@@ -36,7 +36,7 @@ router.get(
   '/project/:id/follow-up/excel',
   authorize(['MANAGER']),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.id || '';
 
     const report = await reportService.exportProjectFollowUpReportPDF(id, userId);
@@ -52,7 +52,7 @@ router.get(
 router.get(
   '/employee/:id/summary',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.id || '';
 
     const report = await reportService.getEmployeeSummaryReport(id, userId);
@@ -68,9 +68,8 @@ router.get(
 router.get(
   '/employee/:id/kpi',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.id || '';
-    const filters = req.query as any;
 
     const report = await reportService.getKPISummaryReport(id, userId);
     res.json(report);

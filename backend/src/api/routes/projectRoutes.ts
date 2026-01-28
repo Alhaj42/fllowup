@@ -2,8 +2,7 @@ import { Router, Response, Request } from 'express';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { authorize, authorizeRole } from '../../middleware/authz';
 import ProjectService, { CreateProjectInput, UpdateProjectInput } from '../../services/projectService';
-import { TimelineService } from "../../services/timelineService";
-const timelineService = new TimelineService();
+import timelineService from "../../services/timelineService";
 import RequirementService from '../../services/requirementService';
 import modificationTrackingService from '../../services/modificationTrackingService';
 import logger from '../../utils/logger';
@@ -195,7 +194,7 @@ router.get('/:id/timeline',
 
       const { id } = req.params;
 
-      const timeline = await timelineService.getTimelineData(id as string, req.user.id);
+      const timeline = await timelineService.getTimeline({ projectId: id as string });
 
       res.json(timeline);
     } catch (error) {
@@ -260,7 +259,7 @@ router.get('/:id/phases',
           tasks: true,
           assignments: {
             include: {
-              user: true,
+              teamMember: true,
             },
           },
         },

@@ -21,8 +21,8 @@ router.post('/:projectId/requirements',
       const projectId = req.params.projectId as string;
       const input = req.body as CreateRequirementInput;
 
-      if (!input.title || input.title.trim() === '') {
-        res.status(400).json({ error: 'Title is required' });
+      if (!input.description || input.description.trim() === '') {
+        res.status(400).json({ error: 'Description is required' });
         return;
       }
 
