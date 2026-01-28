@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-d/import { UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { AuditLogService } from '../services/auditLogService';
 import { AuthRequest } from './auth';
 
