@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
+RUN apt-get update -y && apt-get install -y openssl
 RUN npm install --legacy-peer-deps
 
 # Copy Prisma schema and generate client
