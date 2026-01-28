@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { UserRole, ProjectStatus, PhaseStatus, Project, PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';

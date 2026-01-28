@@ -1,20 +1,16 @@
-import { UserRole } from '@prisma/client';
+import { UserRole, ProjectRequirement, PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
 
 export interface CreateRequirementInput {
-  title: string;
-  description?: string;
-  priority: string;
+  description: string;
+  sortOrder?: number;
 }
 
 export interface UpdateRequirementInput {
-  title?: string;
   description?: string;
-  priority?: string;
-  status?: string;
-  metAt?: Date | null;
+  sortOrder?: number;
 }
 
 class RequirementService {
@@ -34,10 +30,8 @@ class RequirementService {
       const requirement = await this.prisma.projectRequirement.create({
         data: {
           projectId,
-          title: input.title,
           description: input.description,
-          priority: input.priority,
-          status: 'PENDING',
+          sortOrder: input.sortOrder ?? 0,
         },
       });
 
@@ -75,7 +69,10 @@ class RequirementService {
 
       const requirement = await this.prisma.projectRequirement.update({
         where: { id },
-        data: input,
+        data: {
+          description: input.description,
+          sortOrder: input.sortOrder,
+        },
       });
 
       await AuditLogService.logUpdate(
@@ -111,14 +108,15 @@ class RequirementService {
         throw new Error('Requirement not found');
       }
 
-      const status = isCompleted ? 'COMPLETED' : 'PENDING';
-      const metAt = isCompleted ? new Date() : null;
+      const completedAt = isCompleted ? new Date() : null;
+      const completedBy = isCompleted ? userId : null;
 
       const requirement = await this.prisma.projectRequirement.update({
         where: { id },
         data: {
-          status,
-          metAt,
+          isCompleted,
+          completedAt,
+          completedBy,
         },
       });
 
@@ -127,11 +125,11 @@ class RequirementService {
         id,
         userId,
         userRole,
-        existing.status,
-        status
+        existing.isCompleted ? 'COMPLETED' : 'PENDING',
+        isCompleted ? 'COMPLETED' : 'PENDING'
       );
 
-      logger.info('Requirement completion status updated', { requirementId: id, status });
+      logger.info('Requirement completion status updated', { requirementId: id, isCompleted });
 
       return requirement;
     } catch (error) {
@@ -177,7 +175,7 @@ class RequirementService {
     try {
       const requirements = await this.prisma.projectRequirement.findMany({
         where: { projectId },
-        orderBy: { title: 'asc' },
+        orderBy: { sortOrder: 'asc' },
       });
 
       return requirements;

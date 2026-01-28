@@ -2,6 +2,7 @@ import { Router, Response, Request } from 'express';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { authorize, UserRole } from '../../middleware/authz';
 import { configurationService } from '../../services/configurationService';
+import { ConfigurationCategory } from '@prisma/client';
 
 const router = Router();
 
@@ -25,17 +26,18 @@ router.post('/',
   authorize(['MANAGER'] as UserRole[]),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { category, key, value, sortOrder } = req.body;
+      const { category, name, code, description, sortOrder } = req.body;
 
-      if (!category || !key || value === undefined) {
-        res.status(400).json({ error: 'category, key, and value are required' });
+      if (!category || !name) {
+        res.status(400).json({ error: 'category and name are required' });
         return;
       }
 
       const item = await configurationService.createConfiguration({
         category,
-        key,
-        value,
+        name,
+        code,
+        description,
         sortOrder,
       });
 
@@ -52,14 +54,14 @@ router.put('/:category/:key',
   authorize(['MANAGER'] as UserRole[]),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const category = req.params.category as string;
-      const key = req.params.key as string;
-      const { value, isActive, sortOrder } = req.body;
+      const category = req.params.category as ConfigurationCategory;
+      const name = req.params.key as string;
+      const { code, description, isActive, sortOrder } = req.body;
 
       const item = await configurationService.updateConfiguration(
         category,
-        key,
-        { value, isActive, sortOrder }
+        name,
+        { name, code, description, isActive, sortOrder }
       );
 
       res.json({ data: item });
@@ -75,10 +77,10 @@ router.delete('/:category/:key',
   authorize(['MANAGER'] as UserRole[]),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const category = req.params.category as string;
-      const key = req.params.key as string;
+      const category = req.params.category as ConfigurationCategory;
+      const name = req.params.key as string;
 
-      await configurationService.deleteConfiguration(category, key);
+      await configurationService.deleteConfiguration(category, name);
 
       res.status(204).send();
     } catch (error) {

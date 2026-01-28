@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { UserRole, PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -363,7 +363,7 @@ class KPIService {
       const averageScore =
         scoresWithValues.length > 0
           ? scoresWithValues.reduce((sum, kpi) => sum + Number(kpi.score), 0) /
-            scoresWithValues.length
+          scoresWithValues.length
           : null;
 
       return {
@@ -422,12 +422,12 @@ class KPIService {
       return kpiEntries.map((kpi) => ({
         id: kpi.id,
         period: kpi.period,
-        score: kpi.score,
+        score: kpi.score ? Number(kpi.score) : null,
         delayedDays: kpi.delayedDays,
         clientModifications: kpi.clientModifications,
         technicalMistakes: kpi.technicalMistakes,
         projectName: kpi.project.name,
-        phaseName: kpi.phase.name,
+        phaseName: String(kpi.phase.name),
       }));
     } catch (error) {
       logger.error('Failed to get KPI trends', { error, employeeId, filter });
