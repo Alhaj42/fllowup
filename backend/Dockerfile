@@ -1,5 +1,5 @@
-# Simple Dockerfile for Railway (uses automatic npm build)
-FROM node:22-alpine
+# Dockerfile for Railway deployment
+FROM node:20-slim
 
 WORKDIR /app
 
@@ -8,6 +8,10 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
+
+# Copy Prisma schema and generate client
+COPY prisma ./prisma
+RUN npx prisma generate
 
 # Copy source code
 COPY . .
