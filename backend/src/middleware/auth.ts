@@ -23,7 +23,9 @@ export const authenticate = async (
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     if (!isDevOrTest) {
       res.status(401).json({ error: 'Unauthorized: No token provided' });
+      return;
     }
+    // In dev/test, continue without user
     return next();
   }
 
