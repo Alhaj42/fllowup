@@ -10,6 +10,7 @@ const userService = new UserService();
 
 // Simple test endpoint (no auth required) - MUST be before /:id route
 router.get('/test', (req, res) => {
+  console.log('Test endpoint hit!');
   res.json({ message: 'User routes working!', timestamp: new Date().toISOString() });
 });
 
@@ -43,6 +44,7 @@ router.get('/',
 
       res.json(result);
     } catch (error) {
+      console.error('GET /users error:', error);
       logger.error('Failed to get users', { error: error instanceof Error ? error.message : error, userId: req.user?.id });
       if (error instanceof AppError) {
         res.status(error.statusCode).json({ error: error.message });
