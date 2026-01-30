@@ -347,7 +347,9 @@ class ApiClient {
 // IMPORTANT: Set VITE_API_URL in Railway environment variables for production!
 // Example: VITE_API_URL=https://backend-production-c3af.up.railway.app/api
 // Vite uses import.meta.env, not process.env
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// In development, use relative path '/api' so Vite proxy can intercept requests
+const isDevelopment = import.meta.env.DEV;
+const apiBaseUrl = import.meta.env.VITE_API_URL || (isDevelopment ? '/api' : 'http://localhost:3001/api');
 const apiClient = new ApiClient(apiBaseUrl);
 
 export const api = apiClient;
