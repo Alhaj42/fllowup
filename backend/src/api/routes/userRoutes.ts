@@ -38,9 +38,11 @@ router.get('/',
 
       res.json(result);
     } catch (error) {
-      logger.error('Failed to get users', { error, userId: req.user?.id });
+      logger.error('Failed to get users', { error: error instanceof Error ? error.message : error, userId: req.user?.id });
       if (error instanceof AppError) {
         res.status(error.statusCode).json({ error: error.message });
+      } else if (error instanceof Error) {
+        res.status(500).json({ error: error.message, details: error.stack });
       } else {
         res.status(500).json({ error: 'Failed to retrieve users' });
       }
@@ -70,12 +72,12 @@ router.post('/',
 
       res.status(201).json(user);
     } catch (error) {
-      logger.error('Failed to create user', { error, userId: req.user?.id });
+      logger.error('Failed to create user', { error: error instanceof Error ? error.message : error, userId: req.user?.id });
 
       if (error instanceof Error && error.message.includes('Unique constraint')) {
         res.status(409).json({ error: 'User with this email already exists' });
       } else if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ error: error.message, details: error.stack });
       } else {
         res.status(500).json({ error: 'Failed to create user' });
       }
