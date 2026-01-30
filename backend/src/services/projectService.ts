@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { UserRole, ProjectStatus, PhaseStatus, Project, PrismaClient } from '@prisma/client';
+import { Role, ProjectStatus, PhaseStatus, Project, PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -32,6 +32,7 @@ export interface UpdateProjectInput {
 
 export interface GetProjectsFilter {
   status?: ProjectStatus;
+  currentPhase?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -59,7 +60,7 @@ class ProjectService {
   async createProject(
     input: CreateProjectInput,
     userId: string,
-    role: UserRole
+    role: Role
   ): Promise<Project> {
     try {
       const project = await this.prisma.project.create({
@@ -84,13 +85,18 @@ class ProjectService {
 
       await this.createPhases(project.id, ['Studies', 'Design', 'Technical'], userId, role);
 
-      await AuditLogService.logCreate(
-        'Project',
-        project.id,
-        userId,
-        role,
-        project
-      );
+      // Try to log audit, but don't fail if it errors
+      try {
+        await AuditLogService.logCreate(
+          'Project',
+          project.id,
+          userId,
+          role,
+          project
+        );
+      } catch (auditError) {
+        logger.warn('Failed to create audit log, but project was created', { auditError, projectId: project.id });
+      }
 
       logger.info('Project created successfully', { projectId: project.id, contractCode: project.contractCode });
 
@@ -105,7 +111,7 @@ class ProjectService {
     id: string,
     input: UpdateProjectInput,
     userId: string,
-    role: UserRole
+    role: Role
   ): Promise<Project> {
     try {
       const existingProject = await this.prisma.project.findUnique({
@@ -185,6 +191,10 @@ class ProjectService {
 
       if (filter.status) {
         where.status = filter.status;
+      }
+
+      if (filter.currentPhase) {
+        where.currentPhase = filter.currentPhase;
       }
 
       if (filter.clientId) {
@@ -305,7 +315,7 @@ class ProjectService {
     }
   }
 
-  async deleteProject(id: string, userId: string, role: UserRole): Promise<void> {
+  async deleteProject(id: string, userId: string, role: Role): Promise<void> {
     try {
       const project = await this.prisma.project.findUnique({
         where: { id },
@@ -346,7 +356,7 @@ class ProjectService {
     return Math.round(totalProgress / phases.length);
   }
 
-  async createPhases(projectId: string, phaseNames: string[], userId: string, role: UserRole): Promise<any[]> {
+  async createPhases(projectId: string, phaseNames: string[], userId: string, role: Role): Promise<any[]> {
     try {
       const phases = await Promise.all(
         phaseNames.map(async (name, index) => {
@@ -382,7 +392,7 @@ class ProjectService {
     phaseId: string,
     updates: { name?: string; status?: PhaseStatus; teamLeaderId?: string | null },
     userId: string,
-    role: UserRole
+    role: Role
   ): Promise<any> {
     try {
       const phase = await this.prisma.phase.findUnique({ where: { id: phaseId } });
@@ -417,7 +427,7 @@ class ProjectService {
     }
   }
 
-  async deletePhase(phaseId: string, userId: string, role: UserRole): Promise<void> {
+  async deletePhase(phaseId: string, userId: string, role: Role): Promise<void> {
     try {
       const phase = await this.prisma.phase.findUnique({ where: { id: phaseId } });
 
@@ -436,7 +446,7 @@ class ProjectService {
     }
   }
 
-  async assignTeamLeader(phaseId: string, teamLeaderId: string, userId: string, role: UserRole): Promise<any> {
+  async assignTeamLeader(phaseId: string, teamLeaderId: string, userId: string, role: Role): Promise<any> {
     try {
       const phase = await this.prisma.phase.update({
         where: { id: phaseId },
@@ -461,7 +471,7 @@ class ProjectService {
     }
   }
 
-  async removeTeamLeader(phaseId: string, userId: string, role: UserRole): Promise<any> {
+  async removeTeamLeader(phaseId: string, userId: string, role: Role): Promise<any> {
     try {
       const phase = await this.prisma.phase.update({
         where: { id: phaseId },
@@ -507,7 +517,7 @@ class ProjectService {
     }
   }
 
-  async completePhase(phaseId: string, userId: string, role: UserRole): Promise<void> {
+  async completePhase(phaseId: string, userId: string, role: Role): Promise<void> {
     try {
       const canComplete = await this.checkPhaseCompletion(phaseId);
       if (!canComplete) {
