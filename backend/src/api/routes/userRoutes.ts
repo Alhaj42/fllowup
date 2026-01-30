@@ -8,6 +8,11 @@ import { AppError } from '../../middleware/errorHandler';
 const router = Router();
 const userService = new UserService();
 
+// Simple test endpoint (no auth required)
+router.get('/test', (req: AuthRequest, res: Response): void => {
+  res.json({ message: 'User routes working!', timestamp: new Date().toISOString() });
+});
+
 router.get('/',
   authenticate,
   requireManager,
