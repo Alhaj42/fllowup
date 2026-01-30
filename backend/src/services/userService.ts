@@ -1,4 +1,4 @@
-import { UserRole, User, PrismaClient } from '@prisma/client';
+import { Role, User, PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
 import { prisma } from './prismaClient';
@@ -6,7 +6,7 @@ import { prisma } from './prismaClient';
 export interface CreateUserInput {
   email: string;
   name: string;
-  role: UserRole;
+  role: Role;
   position?: string;
   region?: string;
   grade?: string;
@@ -16,7 +16,7 @@ export interface CreateUserInput {
 
 export interface UpdateUserInput {
   name?: string;
-  role?: UserRole;
+  role?: Role;
   position?: string;
   region?: string;
   grade?: string;
@@ -26,7 +26,7 @@ export interface UpdateUserInput {
 }
 
 export interface GetUsersFilter {
-  role?: UserRole;
+  role?: Role;
   isActive?: boolean;
   page?: number;
   limit?: number;
@@ -51,7 +51,7 @@ class UserService {
   async createUser(
     input: CreateUserInput,
     userId: string,
-    role: UserRole
+    role: Role
   ): Promise<User> {
     try {
       const user = await this.prisma.user.create({
@@ -68,13 +68,18 @@ class UserService {
         },
       });
 
-      await AuditLogService.logCreate(
-        'USER',
-        user.id,
-        userId,
-        role,
-        user
-      );
+      // Try to log audit, but don't fail if it errors
+      try {
+        await AuditLogService.logCreate(
+          'USER',
+          user.id,
+          userId,
+          role,
+          user
+        );
+      } catch (auditError) {
+        logger.warn('Failed to create audit log, but user was created', { auditError, userId: user.id });
+      }
 
       logger.info('User created successfully', { userId: user.id, email: user.email });
 
@@ -165,7 +170,7 @@ class UserService {
     id: string,
     input: UpdateUserInput,
     userId: string,
-    role: UserRole
+    role: Role
   ): Promise<User> {
     try {
       const existingUser = await this.prisma.user.findUnique({
@@ -205,7 +210,7 @@ class UserService {
   async deactivateUser(
     id: string,
     userId: string,
-    role: UserRole
+    role: Role
   ): Promise<User> {
     try {
       const existingUser = await this.prisma.user.findUnique({
@@ -244,7 +249,7 @@ class UserService {
   async toggleUserActiveStatus(
     id: string,
     userId: string,
-    role: UserRole
+    role: Role
   ): Promise<User> {
     try {
       const existingUser = await this.prisma.user.findUnique({
@@ -318,7 +323,7 @@ class UserService {
     }
   }
 
-  async getUsersByRole(role: UserRole): Promise<User[]> {
+  async getUsersByRole(role: Role): Promise<User[]> {
     try {
       const users = await this.prisma.user.findMany({
         where: {
