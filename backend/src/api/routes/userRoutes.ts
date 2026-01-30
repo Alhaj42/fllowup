@@ -81,6 +81,7 @@ router.post('/',
 
       res.status(201).json(user);
     } catch (error) {
+      console.error('CREATE USER ERROR:', error);
       logger.error('Failed to create user', { error: error instanceof Error ? error.message : error, userId: req.user?.id });
 
       if (error instanceof Error && error.message.includes('Unique constraint')) {
