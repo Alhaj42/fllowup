@@ -68,6 +68,7 @@ router.post('/',
       }
 
       const input = req.body as CreateUserInput;
+      console.log('Creating user with input:', input);
 
       const existingUser = await userService.getUserByEmail(input.email);
       if (existingUser) {
@@ -76,6 +77,7 @@ router.post('/',
       }
 
       const user = await userService.createUser(input, req.user.id, req.user.role);
+      console.log('User created successfully:', user.id);
 
       res.status(201).json(user);
     } catch (error) {
