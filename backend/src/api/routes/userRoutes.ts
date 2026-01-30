@@ -112,6 +112,8 @@ router.get('/:id',
 
       res.json(user);
     } catch (error) {
+      console.log('GET /:id route hit with id:', req.params.id);
+      console.log('Error:', error);
       logger.error('Failed to get user', { error, userId: req.params.id as string });
       if (error instanceof AppError) {
         res.status(error.statusCode).json({ error: error.message });
