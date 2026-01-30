@@ -16,7 +16,7 @@
   },
   "deploy": {
     "startCommand": "sh start.sh",
-    "healthcheckPath": "/api/v1/health",
+    "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "healthcheckInterval": 30,
     "restartPolicyType": "ON_FAILURE",

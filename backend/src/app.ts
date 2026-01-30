@@ -28,7 +28,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 export const setupRoutes = (): void => {
-  // Health check at root
+  // Health check at root (for Railway healthcheck)
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
