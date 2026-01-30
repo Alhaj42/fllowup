@@ -25,7 +25,12 @@ export const authenticate = async (
       res.status(401).json({ error: 'Unauthorized: No token provided' });
       return;
     }
-    // In dev/test, continue without user
+    // In dev/test, set mock user and continue
+    req.user = {
+      id: 'dev-user-id',
+      email: 'dev@example.com',
+      role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
+    };
     return next();
   }
 
