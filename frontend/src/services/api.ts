@@ -347,4 +347,6 @@ class ApiClient {
 const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 const apiClient = new ApiClient(apiBaseUrl);
 
+export const api = apiClient;
+
 export default apiClient;

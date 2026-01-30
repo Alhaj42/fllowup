@@ -15,7 +15,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert
+  Alert,
+  Grid
 } from '@mui/material';
 import { api } from '../../services/api';
 
@@ -159,19 +160,19 @@ export const CostList: React.FC<CostListProps> = ({ projectId, onRefresh }) => {
             Cost Summary
           </Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
               <Typography variant="body2">Total Cost:</Typography>
               <Typography variant="h4">{formatCurrency(summary.totalCost)}</Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Typography variant="body2">Employee Costs:</Typography>
               <Typography variant="h4">{formatCurrency(summary.employeeCostTotal)}</Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Typography variant="body2">Material Costs:</Typography>
               <Typography variant="h4">{formatCurrency(summary.materialCostTotal)}</Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Typography variant="body2">Total Entries:</Typography>
               <Typography variant="h4">{summary.totalEntries}</Typography>
             </Grid>
@@ -226,9 +227,9 @@ export const CostList: React.FC<CostListProps> = ({ projectId, onRefresh }) => {
                 </TableRow>
               ))
             )}
-          </TableBody>
+      </TableBody>
         </Table>
-      </Box>
+      </TableContainer>
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Confirm Deletion</DialogTitle>

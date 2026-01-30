@@ -119,7 +119,7 @@ export const CostForm: React.FC<CostFormProps> = ({
           )}
 
           <Grid container spacing={3} sx={{ mt: 2 }}>
-            <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 select
@@ -133,7 +133,7 @@ export const CostForm: React.FC<CostFormProps> = ({
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Description"
@@ -148,7 +148,7 @@ export const CostForm: React.FC<CostFormProps> = ({
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Amount ($)"
@@ -163,7 +163,7 @@ export const CostForm: React.FC<CostFormProps> = ({
             </Grid>
 
             {formData.type === 'EMPLOYEE' && teamMembers.length > 0 && (
-              <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
                 <TextField
                   fullWidth
                   select
@@ -183,7 +183,7 @@ export const CostForm: React.FC<CostFormProps> = ({
               </Grid>
             )}
 
-            <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 type="date"

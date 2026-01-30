@@ -199,8 +199,8 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
           </IconButton>
         </Box>
 
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={6} sm={3}>
+<Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Total Team Members
@@ -210,7 +210,7 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Allocated
@@ -220,7 +220,7 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Over-allocated
@@ -235,7 +235,7 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Utilization
@@ -250,7 +250,7 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
         </Grid>
 
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={4}>
+          <Grid xs={12} sm={4}>
             <FormControl fullWidth>
               <InputLabel>Filter by Project</InputLabel>
               <Select
@@ -262,7 +262,7 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid xs={12} sm={4}>
             <TextField
               fullWidth
               label="From Date"
@@ -272,7 +272,7 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid xs={12} sm={4}>
             <TextField
               fullWidth
               label="To Date"
@@ -383,8 +383,8 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
                                     mb: 1,
                                   }}
                                 >
-                                  <Grid container spacing={2} alignItems="center">
-                                    <Grid item xs={12} sm={4}>
+<Grid container spacing={2} alignItems="center">
+                                    <Grid xs={12} sm={4}>
                                       <Typography variant="body2" color="textSecondary">
                                         Project
                                       </Typography>
@@ -392,14 +392,14 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
                                         {assignment.projectName}
                                       </Typography>
                                     </Grid>
-                                    <Grid item xs={6} sm={2}>
+                                    <Grid xs={6} sm={2}>
                                       <Chip
                                         label={assignment.role}
                                         size="small"
                                         variant="outlined"
                                       />
                                     </Grid>
-                                    <Grid item xs={6} sm={2}>
+                                    <Grid xs={6} sm={2}>
                                       <Typography variant="body2" color="textSecondary">
                                         Allocation
                                       </Typography>
@@ -416,7 +416,7 @@ const TeamAllocationView: React.FC<TeamAllocationViewProps> = ({
                                         {assignment.workingPercentage}%
                                       </Typography>
                                     </Grid>
-                                    <Grid item xs={6} sm={2}>
+                                    <Grid xs={6} sm={2}>
                                       <Typography variant="body2" color="textSecondary">
                                         Period
                                       </Typography>

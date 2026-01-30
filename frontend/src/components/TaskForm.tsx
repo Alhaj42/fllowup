@@ -103,8 +103,8 @@ export default function TaskForm({ open, onClose, onSubmit, initialData, phaseId
             <DialogTitle>{initialData ? 'Edit Task' : 'Create Task'}</DialogTitle>
             <form onSubmit={handleSubmit(onFormSubmit)}>
                 <DialogContent>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+<Grid container spacing={2}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="code"
                                 control={control}
@@ -121,7 +121,7 @@ export default function TaskForm({ open, onClose, onSubmit, initialData, phaseId
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="duration"
                                 control={control}
@@ -139,7 +139,7 @@ export default function TaskForm({ open, onClose, onSubmit, initialData, phaseId
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Controller
                                 name="description"
                                 control={control}
@@ -157,7 +157,7 @@ export default function TaskForm({ open, onClose, onSubmit, initialData, phaseId
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="status"
                                 control={control}
@@ -175,7 +175,7 @@ export default function TaskForm({ open, onClose, onSubmit, initialData, phaseId
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="assignedTeamMemberId"
                                 control={control}

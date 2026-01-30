@@ -2,11 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppThemeProvider } from './components/ThemeProvider';
 import { useAuthStore } from './state/authStore';
 import ErrorBoundary from './components/ErrorBoundary';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import CreateProject from './pages/CreateProject';
 import ProjectDetail from './pages/ProjectDetail';
+import Users from './pages/Users';
 
 export default function App() {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -34,6 +36,14 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects/new" element={<CreateProject />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route 
+              path="/users" 
+              element={
+                <ProtectedRoute requiredRole="MANAGER">
+                  <Users />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="*" element={<Navigate to={redirectPath} replace />} />
           </Routes>
         </BrowserRouter>

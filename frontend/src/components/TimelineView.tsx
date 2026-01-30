@@ -99,14 +99,14 @@ export default function TimelineView({
         // Add phase data
         if (item.phases) {
           item.phases.forEach((phase: any) => {
-            const phaseData: {
-              phaseId: phase.phaseId,
-              phaseName: phase.phaseName,
-              startDate: new Date(phase.startDate),
-              endDate: phase.endDate ? new Date(phase.endDate) : null,
-              status: phase.status,
-              tasks: phase.tasks || [],
-            };
+          const phaseData = {
+            phaseId: phase.phaseId,
+            phaseName: phase.phaseName,
+            startDate: new Date(phase.startDate),
+            endDate: phase.endDate ? new Date(phase.endDate) : null,
+            status: phase.status,
+            tasks: phase.tasks || [],
+          };
             project.phases.push(phaseData);
           });
         }
@@ -114,13 +114,13 @@ export default function TimelineView({
         // Add assignment data
         if (item.teamAssignments) {
           item.teamAssignments.forEach((assignment: any) => {
-            const assignmentData: {
-              teamMemberId: assignment.teamMemberId,
-              teamMemberName: assignment.teamMemberName,
-              role: assignment.teamMember?.role || 'TEAM_MEMBER',
-              allocation: assignment.totalAllocation,
-              phaseId: assignment.phaseId,
-            };
+          const assignmentData = {
+            teamMemberId: assignment.teamMemberId,
+            teamMemberName: assignment.teamMemberName,
+            role: assignment.teamMember?.role || 'TEAM_MEMBER',
+            allocation: assignment.totalAllocation,
+            phaseId: assignment.phaseId,
+          };
             project.assignments.push(assignmentData);
           });
         }

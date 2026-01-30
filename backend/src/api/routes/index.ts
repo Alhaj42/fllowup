@@ -1,12 +1,10 @@
 import express, { Router } from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 
 const router = Router();
 
-// Apply middleware to all routes
+// Apply middleware to all routes (CORS is handled globally in app.ts)
 router.use(helmet());
-router.use(cors());
 router.use(express.json());
 
 // Health check endpoint (no authentication required)
@@ -28,6 +26,7 @@ router.get('/', (req, res) => {
       kpis: '/kpis',
       reports: '/reports',
       configuration: '/configuration',
+      users: '/users',
     },
   });
 });
@@ -42,6 +41,7 @@ import assignmentRoutes from './assignmentRoutes';
 import reportRoutes from './reportRoutes';
 import kpiRoutes from './kpiRoutes';
 import timelineRoutes from './timelineRoutes';
+import userRoutes from './userRoutes';
 
 router.use('/', projectRoutes);
 router.use('/projects', projectRoutes);
@@ -64,5 +64,6 @@ router.use('/kpis/summary', kpiRoutes);
 router.use('/reports', reportRoutes);
 router.use('/configuration', configurationRoutes);
 router.use('/requirements', requirementRoutes);
+router.use('/users', userRoutes);
 
 export default router;

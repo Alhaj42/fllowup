@@ -271,7 +271,6 @@ export default function TeamAssignmentForm({
                 style={{ width: `${currentAllocation + workingPercentage}%` }}
               />
             </div>
-            </div>
             <div className="flex justify-between text-xs mt-1">
               <span>0%</span>
               <span className={`font-bold ${currentAllocation + workingPercentage > 100 ? 'text-red-600' : 'text-gray-700'}`}>

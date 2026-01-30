@@ -107,8 +107,8 @@ const ModificationHistory: React.FC<ModificationHistoryProps> = ({ projectId }) 
           Modification History
         </Typography>
 
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={6} sm={3}>
+<Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Used
@@ -118,7 +118,7 @@ const ModificationHistory: React.FC<ModificationHistoryProps> = ({ projectId }) 
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Remaining
@@ -128,7 +128,7 @@ const ModificationHistory: React.FC<ModificationHistoryProps> = ({ projectId }) 
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Days Used
@@ -138,7 +138,7 @@ const ModificationHistory: React.FC<ModificationHistoryProps> = ({ projectId }) 
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Box>
               <Typography variant="caption" color="textSecondary">
                 Status

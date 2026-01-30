@@ -149,8 +149,8 @@ export const EmployeeKPISummary: React.FC<EmployeeKPISummaryProps> = ({ employee
 
       {summary && (
         <>
-          <Grid container spacing={3} mb={3}>
-            <Grid item xs={12} sm={6}>
+<Grid container spacing={3} mb={3}>
+            <Grid xs={12} sm={6}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="primary">
@@ -172,7 +172,7 @@ export const EmployeeKPISummary: React.FC<EmployeeKPISummaryProps> = ({ employee
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>

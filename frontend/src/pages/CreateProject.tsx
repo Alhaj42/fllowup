@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../state/authStore';
+import apiClient from '../services/api';
 
 interface Client {
   id: string;
@@ -125,33 +126,19 @@ export default function CreateProject() {
     const token = localStorage.getItem('auth_token');
 
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        apiClient.setAuthToken(token);
       }
 
-      const response = await fetch('http://localhost:3000/api/v1/projects', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          contractCode: formData.contractCode.trim(),
-          clientId: formData.clientId,
-          status: formData.status,
-          startDate: formData.startDate,
-          estimatedEndDate: formData.estimatedEndDate,
-          builtUpArea: formData.builtUpArea ? parseFloat(formData.builtUpArea) : null,
-        }),
+      const data = await apiClient.post('/v1/projects', {
+        name: formData.name.trim(),
+        contractCode: formData.contractCode.trim(),
+        clientId: formData.clientId,
+        status: formData.status,
+        startDate: formData.startDate,
+        estimatedEndDate: formData.estimatedEndDate,
+        builtUpArea: formData.builtUpArea ? parseFloat(formData.builtUpArea) : null,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
 
       setSuccess(true);
 
@@ -401,7 +388,7 @@ export default function CreateProject() {
 
               <Button
                 type="submit"
-                disabled={loading || Object.keys(errors).length > 0}
+                disabled={loading || Object.values(errors).some(error => error && error.length > 0)}
                 aria-label="Create project"
                 style={{
                   padding: '10px 24px',

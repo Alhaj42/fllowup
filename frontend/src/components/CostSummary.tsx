@@ -208,8 +208,8 @@ export const CostSummary: React.FC<CostSummaryProps> = ({
 
       {/* Summary Cards */}
       {summary && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
+<Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
@@ -225,7 +225,7 @@ export const CostSummary: React.FC<CostSummaryProps> = ({
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
@@ -241,7 +241,7 @@ export const CostSummary: React.FC<CostSummaryProps> = ({
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
@@ -257,7 +257,7 @@ export const CostSummary: React.FC<CostSummaryProps> = ({
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
@@ -277,9 +277,9 @@ export const CostSummary: React.FC<CostSummaryProps> = ({
 
       {/* Cost Breakdown by Category */}
       {categorizedCosts && (
-        <Grid container spacing={3}>
+<Grid container spacing={3}>
           {Object.entries(categorizedCosts).map(([category, costs]) => (
-            <Grid item xs={12} key={category}>
+            <Grid xs={12} key={category}>
               <Paper sx={{ p: 2 }}>
                 <Box display="flex" alignItems="center" mb={2}>
                   <Chip

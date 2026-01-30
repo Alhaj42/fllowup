@@ -202,7 +202,7 @@ export const CostEntryForm: React.FC<CostEntryFormProps> = ({
 
           {!loadingData && (
             <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
                 <FormControl fullWidth required>
                   <InputLabel>Phase</InputLabel>
                   <Select
@@ -221,7 +221,7 @@ export const CostEntryForm: React.FC<CostEntryFormProps> = ({
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
                 <FormControl fullWidth required>
                   <InputLabel>Employee</InputLabel>
                   <Select
@@ -240,7 +240,7 @@ export const CostEntryForm: React.FC<CostEntryFormProps> = ({
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
                 <TextField
                   fullWidth
                   type="date"
@@ -253,7 +253,7 @@ export const CostEntryForm: React.FC<CostEntryFormProps> = ({
                 />
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
                 <FormControl fullWidth required>
                   <InputLabel>Cost Type</InputLabel>
                   <Select
@@ -269,7 +269,7 @@ export const CostEntryForm: React.FC<CostEntryFormProps> = ({
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+<Grid xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Amount"
@@ -283,7 +283,7 @@ export const CostEntryForm: React.FC<CostEntryFormProps> = ({
                 />
               </Grid>
 
-              <Grid item xs={12}>
+<Grid xs={12}>
                 <TextField
                   fullWidth
                   label="Description"

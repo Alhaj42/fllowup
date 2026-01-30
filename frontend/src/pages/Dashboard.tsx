@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Search, FilterList, FilterListOff, Refresh, Logout } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../state/authStore';
+import { useAuthStore, hasRole } from '../state/authStore';
 
 interface Project {
   id: string;
@@ -200,6 +200,28 @@ export default function Dashboard() {
                   <Logout fontSize="small" />
                   <span>Logout</span>
                 </button>
+
+                {hasRole('MANAGER') && (
+                  <button
+                    onClick={() => navigate('/users')}
+                    aria-label="User management"
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #1976d2',
+                      borderRadius: '8px',
+                      background: '#1976d2',
+                      color: 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <span>User Management</span>
+                  </button>
+                )}
               </Box>
             </Box>
 

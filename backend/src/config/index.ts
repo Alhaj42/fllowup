@@ -29,6 +29,8 @@ export const config = {
     s3Bucket: process.env.AWS_S3_BUCKET,
   },
   cors: {
+    // Multiple origins can be specified separated by commas
+    // e.g., CORS_ORIGIN=http://localhost:5173,https://frontend-production-c4335.up.railway.app
     origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   },
 };
