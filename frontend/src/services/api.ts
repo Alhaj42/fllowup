@@ -344,9 +344,10 @@ class ApiClient {
 }
 
 // Create singleton instance
-// IMPORTANT: Set REACT_APP_API_URL in Railway environment variables!
-// Example: REACT_APP_API_URL=https://backend-production-c3af.up.railway.app/api
-const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// IMPORTANT: Set VITE_API_URL in Railway environment variables for production!
+// Example: VITE_API_URL=https://backend-production-c3af.up.railway.app/api
+// Vite uses import.meta.env, not process.env
+const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const apiClient = new ApiClient(apiBaseUrl);
 
 export const api = apiClient;
