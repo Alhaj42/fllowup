@@ -8,8 +8,8 @@ import { AppError } from '../../middleware/errorHandler';
 const router = Router();
 const userService = new UserService();
 
-// Simple test endpoint (no auth required)
-router.get('/test', (req: AuthRequest, res: Response): void => {
+// Simple test endpoint (no auth required) - MUST be before /:id route
+router.get('/test', (req, res) => {
   res.json({ message: 'User routes working!', timestamp: new Date().toISOString() });
 });
 
