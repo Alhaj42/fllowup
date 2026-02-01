@@ -8,7 +8,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 exports.app = (0, express_1.default)();
 // Configure CORS to allow multiple origins
-const corsOrigins = process.env.CORS_ORIGIN
+const corsOrigins = (process.env.CORS_ORIGIN || '*')
     ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
     : ['http://localhost:5173', 'http://localhost:3000'];
 exports.app.use((0, cors_1.default)({
