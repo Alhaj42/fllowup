@@ -6,7 +6,7 @@ NODE_ENV = "production"
 PORT = "3000"
 
 [phases.build]
-cmd = "npm install --legacy-peer-deps && npx prisma generate && npm run build"
+cmd = "npm install --legacy-peer-deps && npm run build"
 
 [phases.start]
 cmd = "npx prisma generate && node dist/server.js"
