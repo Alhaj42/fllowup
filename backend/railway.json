@@ -3,8 +3,8 @@
   "deploy": {
     "startCommand": "sh start.sh",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 300,
-    "healthcheckInterval": 30,
+    "healthcheckTimeout": 600,
+    "healthcheckInterval": 60,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
