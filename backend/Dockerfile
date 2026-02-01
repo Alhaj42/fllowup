@@ -16,11 +16,14 @@ COPY prisma ./prisma
 # Copy source code
 COPY . .
 
+# Generate Prisma client with dummy DB URL for TypeScript compilation
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public" npx prisma generate
+
 # Build TypeScript
 RUN npm run build
 
 # Expose port
 EXPOSE 3000
 
-# Generate Prisma client and start server
+# Regenerate Prisma client with real DB URL and start server
 CMD ["sh", "-c", "npx prisma generate && node dist/server.js"]
