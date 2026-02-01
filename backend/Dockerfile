@@ -10,9 +10,8 @@ COPY package*.json ./
 RUN apt-get update -y && apt-get install -y openssl
 RUN npm install --legacy-peer-deps
 
-# Copy Prisma schema and generate client
+# Copy Prisma schema
 COPY prisma ./prisma
-RUN npx prisma generate
 
 # Copy source code
 COPY . .
@@ -23,5 +22,5 @@ RUN npm run build
 # Expose port
 EXPOSE 3000
 
-# Start server
-CMD ["node", "dist/server.js"]
+# Generate Prisma client and start server
+CMD ["sh", "-c", "npx prisma generate && node dist/server.js"]
