@@ -1,1 +1,0 @@
-{"version":3,"file":"auth0.d.ts","sourceRoot":"","sources":["../src/config/auth0.ts"],"names":[],"mappings":"AAAA,OAAO,GAAG,MAAM,cAAc,CAAC;AAuB/B,eAAO,MAAM,YAAY;;;gBAGE,GAAG,CAAC,SAAS,EAAE;CACzC,CAAC;AAEF,eAAO,MAAM,WAAW,GAAU,OAAO,MAAM,KAAG,OAAO,CAAC,GAAG,CAAC,UAAU,CAUvE,CAAC;AAEF,eAAO,MAAM,oBAAoB,GAAI,OAAO,MAAM;;;;;CAQjD,CAAC"}
