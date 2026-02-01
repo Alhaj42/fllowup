@@ -42,6 +42,8 @@ export interface UsersResponse {
 }
 
 class UserService {
+  private prisma: PrismaClient;
+
   constructor() {
     this.prisma = prisma;
   }
@@ -49,7 +51,7 @@ class UserService {
   async createUser(
     input: CreateUserInput,
     userId: string,
-    role: 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER'
+    _role: 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER'
   ): Promise<User> {
     try {
       const user = await this.prisma.user.create({
@@ -70,11 +72,11 @@ class UserService {
         'USER',
         user.id,
         userId,
-        role,
+        _role,
         user
       );
 
-      logger.info(`User created: ${user.email} (${role})`);
+      logger.info(`User created: ${user.email} (${_role})`);
       return user;
     } catch (error) {
       logger.error('Failed to create user:', error);
@@ -102,7 +104,7 @@ class UserService {
         },
       });
 
-      await AuditLogService.logUpdate('USER', userId, currentUserId, user, input);
+      await AuditLogService.logUpdate('USER', userId, currentUserId, 'MANAGER', user, input);
       logger.info(`User updated: ${userId}`);
       return user;
     } catch (error) {
@@ -173,7 +175,7 @@ class UserService {
         where: { id: userId },
       });
 
-      await AuditLogService.logDelete('USER', userId, currentUserId);
+      await AuditLogService.logDelete('USER', userId, currentUserId, 'MANAGER', {});
 
       logger.info(`User deleted: ${userId}`);
     } catch (error) {
@@ -181,7 +183,91 @@ class UserService {
       throw error;
     }
   }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+      });
+      return user;
+    } catch (error) {
+      logger.error('Failed to get user by email:', error);
+      throw error;
+    }
+  }
+
+  async deactivateUser(userId: string, currentUserId: string, _role: string): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { isActive: false },
+      });
+
+      await AuditLogService.logUpdate('USER', userId, currentUserId, _role, { isActive: true }, { isActive: false });
+
+      logger.info(`User deactivated: ${userId}`);
+    } catch (error) {
+      logger.error('Failed to deactivate user:', error);
+      throw error;
+    }
+  }
+
+  async toggleUserActiveStatus(userId: string, currentUserId: string, _role: string): Promise<User> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { isActive: !user.isActive },
+      });
+
+      await AuditLogService.logUpdate('USER', userId, currentUserId, _role, user, updatedUser);
+
+      logger.info(`User status toggled: ${userId} -> ${updatedUser.isActive}`);
+      return updatedUser;
+    } catch (error) {
+      logger.error('Failed to toggle user status:', error);
+      throw error;
+    }
+  }
+
+  async getTeamLeaders(): Promise<User[]> {
+    try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          role: 'TEAM_LEADER',
+          isActive: true,
+        },
+      });
+      return users;
+    } catch (error) {
+      logger.error('Failed to get team leaders:', error);
+      throw error;
+    }
+  }
+
+  async getTeamMembers(): Promise<User[]> {
+    try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          role: 'TEAM_MEMBER',
+          isActive: true,
+        },
+      });
+      return users;
+    } catch (error) {
+      logger.error('Failed to get team members:', error);
+      throw error;
+    }
+  }
 }
 
 const userService = new UserService();
+export { UserService };
 export default userService;
