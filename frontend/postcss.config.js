@@ -1,5 +1,5 @@
 export default {
   plugins: {
-    tailwindcss: require('tailwindcss'),
+    '@tailwindcss/postcss': {},
   },
 }
