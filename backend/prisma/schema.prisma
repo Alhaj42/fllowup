@@ -219,13 +219,11 @@ model AuditLog {
   entityType   AuditEntityType
   entityId     String
   action     AuditAction
-  changedBy   String
+  changedByUser User? @relation("completedByUser", fields: [completedByUser], references: [id])
   changes     Json?
   ipAddress  String?
   userAgent   String?
   timestamp   DateTime @default(now())
-
-  changedByUser User @relation("changedBy", fields: [changedBy], references: [id])
 
   @@index([entityType, entityId])
   @@index([timestamp])
@@ -241,11 +239,11 @@ model ProjectRequirement {
   sortOrder        Int          @default(0)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
-
   project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  completedBy User? @relation("completedBy", fields: [completedBy], references: [id])
+  completedByUser  User       @relation("completedByUser", fields: [completedBy], references: [id])
 
-  @@index([projectId, isCompleted])
+  @@index([projectId])
+  @@index([isCompleted])
   @@index([sortOrder])
 }
 
