@@ -55,6 +55,5 @@ router.use('/reports', reportRoutes);
 router.use('/configuration', configurationRoutes);
 router.use('/requirements', requirementRoutes);
 router.use('/users', userRoutes);
-router.use('/team', teamRoutes);
 
 export default router;
