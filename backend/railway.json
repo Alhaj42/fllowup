@@ -4,9 +4,6 @@
     "builder": "NIXPACKS",
     "nixpacksPlan": {
       "phases": {
-        "setup": {
-          "nixPkgs": ["nodejs_22", "npm-9"]
-        },
         "build": {
           "cmds": ["DATABASE_URL='postgresql://dummy:dummy@localhost:5432/dummy' npx prisma generate", "npx tsc"]
         }
