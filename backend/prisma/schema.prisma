@@ -87,7 +87,7 @@ model Project {
   estimatedEndDate       DateTime
   actualEndDate         DateTime?
   currentPhase          String
-  status                ProjectStatus
+  status                String
   modificationAllowedTimes Int        @default(3)
   modificationDaysPerTime  Int        @default(5)
   totalCost             Decimal      @default(0) @db.Decimal(10, 2)
@@ -107,13 +107,12 @@ model Project {
   @@index([status])
   @@index([currentPhase])
   @@index([startDate, estimatedEndDate])
-  @@index([modificationAllowedTimes, modificationDaysPerTime])
 }
 
 model Phase {
   id                String       @id @default(uuid())
   projectId         String
-  name              String
+  name              PhaseName
   startDate         DateTime
   duration          Int
   estimatedEndDate   DateTime
