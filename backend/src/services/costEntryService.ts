@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { prisma } from './prismaClient';
 
 export interface CostEntryInput {

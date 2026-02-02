@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { authorizeRole, requireManager } from '../../middleware/authz';
-import UserService, { CreateUserInput, UpdateUserInput } from '../../services/userService';
+import { UserService, CreateUserInput, UpdateUserInput } from '../../services/userService';
 import logger from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 
@@ -40,7 +40,7 @@ router.get('/',
         search,
       };
 
-      const result = await userService.getUsers(filter);
+      const result = await userService.getAllUsers(filter);
 
       res.json(result);
     } catch (error) {
@@ -147,7 +147,7 @@ router.put('/:id',
         return;
       }
 
-      const updatedUser = await userService.updateUser(id as string, input, req.user.id, req.user.role);
+      const updatedUser = await userService.updateUser(id as string, input, req.user.id);
 
       res.json(updatedUser);
     } catch (error) {

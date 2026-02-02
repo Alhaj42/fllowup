@@ -405,7 +405,7 @@ class TeamService {
     }>
   > {
     try {
-      let whereClause: any = {};
+      const whereClause: any = {};
 
       if (filter?.projectId) {
         whereClause.phase = {

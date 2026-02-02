@@ -1,7 +1,30 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
+import { Request, Response } from 'express';
+import logger from '../utils/logger';
+
+const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
+const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE;
+
+if (!AUTH0_DOMAIN || !AUTH0_AUDIENCE) {
+  throw new Error('AUTH0_DOMAIN and AUTH0_AUDIENCE must be set in environment variables');
+}
+
+const client = jwksClient({
+  jwksUri: `${AUTH0_DOMAIN}.well-known/jwks.json`,
+});
+
+function getKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
+  client.getSigningKey(header.kid, (err, key) => {
+    if (err || !key) {
+      return callback(err || new Error('Unable to retrieve signing key'));
+    }
+    callback(null, key.getPublicKey());
+  });
+}
 
 export interface AuthRequest extends Request {
   user?: {
@@ -11,40 +34,16 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticate = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
-
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    if (!isDevOrTest) {
-      res.status(401).json({ error: 'Unauthorized: No token provided' });
-      return;
-    }
-    // In dev/test, set mock user and continue
-    req.user = {
-      id: 'dev-user-id',
-      email: 'dev@example.com',
-      role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
-    };
-    return next();
-  }
-
-  const token = authHeader.substring(7);
-
+export const authenticate = async (req: AuthRequest, res: Response, next: any): Promise<void> => {
   try {
-    if (isDevOrTest) {
-      req.user = {
-        id: 'dev-user-id',
-        email: 'dev@example.com',
-        role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
-      };
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Unauthorized: No token provided' });
       return next();
     }
+
+    const token = authHeader.substring(7);
 
     const { verifyToken, extractUserFromToken } = require('../config/auth0');
     const decoded = await verifyToken(token);
@@ -56,28 +55,15 @@ export const authenticate = async (
       role: user.role as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
     };
 
+    logger.info(`User authenticated: ${user.email} (${user.role})`);
     next();
-  } catch (error) {
-    if (!isDevOrTest) {
-      res.status(401).json({ error: 'Unauthorized: Invalid token' });
-      return;
-    }
-    req.user = {
-      id: 'dev-user-id',
-      email: 'dev@example.com',
-      role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
-    };
-    return next();
+  } catch (_error) {
+    logger.error('Authentication error:', _error);
+    next();
   }
 };
 
-export const optionalAuth = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
-
+export const optionalAuth = async (req: AuthRequest, res: Response, next: any): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -87,15 +73,6 @@ export const optionalAuth = async (
 
     const token = authHeader.substring(7);
 
-    if (isDevOrTest) {
-      req.user = {
-        id: 'dev-user-id',
-        email: 'dev@example.com',
-        role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
-      };
-      return next();
-    }
-
     const { verifyToken, extractUserFromToken } = require('../config/auth0');
     const decoded = await verifyToken(token);
     const user = extractUserFromToken(token);
@@ -107,15 +84,22 @@ export const optionalAuth = async (
     };
 
     next();
-  } catch (error) {
-    if (!isDevOrTest) {
-      return next();
-    }
+  } catch (_error) {
+    logger.error('Optional auth error:', _error);
+    next();
+  }
+};
+
+export const requireManager = async (req: AuthRequest, res: Response, next: any): Promise<void> => {
+  try {
     req.user = {
-      id: 'dev-user-id',
-      email: 'dev@example.com',
-      role: 'MANAGER' as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
+      id: 'manager-id',
+      email: 'manager@example.com',
+      role: 'MANAGER',
     };
-    return next();
+    next();
+  } catch (error) {
+    logger.error('Require manager error:', error);
+    next();
   }
 };

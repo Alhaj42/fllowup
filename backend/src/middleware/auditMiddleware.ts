@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
 import { AuditLogService } from '../services/auditLogService';
 import { AuthRequest } from './auth';
+import logger from '../utils/logger';
 
 export const auditMiddleware = (entityType: string) => {
-  return async(req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     const originalSend = res.send;
     const originalJson = res.json;
 
@@ -14,7 +15,7 @@ export const auditMiddleware = (entityType: string) => {
     const logAudit = async () => {
       if (!req.user || statusCode >= 400) return;
 
-      const entityId = req.params.id as string || (res.locals.entityId as string);
+      const entityId = (req.params.id as string) || (res.locals.entityId as string);
       if (!entityId) return;
 
       try {
@@ -45,8 +46,8 @@ export const auditMiddleware = (entityType: string) => {
             res.locals.originalData
           );
         }
-      } catch (error) {
-        console.error('Audit middleware error:', error);
+      } catch (_error) {
+        logger.error('Audit middleware error:', _error);
       }
     };
 
