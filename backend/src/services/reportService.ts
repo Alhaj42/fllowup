@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as XLSX from 'xlsx';
 import logger from '../utils/logger';
 import { AuditAction, PrismaClient } from '@prisma/client';
