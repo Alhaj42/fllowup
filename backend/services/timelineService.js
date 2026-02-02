@@ -21,7 +21,7 @@ class TimelineService {
             const startDate = filters.startDate ? new Date(filters.startDate) : undefined;
             const endDate = filters.endDate ? new Date(filters.endDate) : undefined;
             // Build where clause
-            let whereClause = {};
+            const whereClause = {};
             if (filters.projectId) {
                 whereClause.id = filters.projectId;
             }

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import reportService from '../../services/reportService';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { authorize } from '../../middleware/authz';

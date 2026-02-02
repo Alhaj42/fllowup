@@ -7,7 +7,7 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended',
     'prettier',
   ],
   plugins: ['@typescript-eslint'],
@@ -22,5 +22,5 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'warn',
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
-  ignorePatterns: ['dist/', 'node_modules/', 'coverage/'],
+  ignorePatterns: ['dist/', 'node_modules/', 'coverage/', '**/*.d.ts'],
 };

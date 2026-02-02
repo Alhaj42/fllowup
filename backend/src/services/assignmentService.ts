@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { UserRole, AssignmentRole, Assignment, PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
@@ -228,7 +227,7 @@ class AssignmentService {
       const startDate = filter.startDate ? new Date(filter.startDate) : undefined;
       const endDate = filter.endDate ? new Date(filter.endDate) : undefined;
 
-      let whereClause: any = {};
+      const whereClause: any = {};
 
       if (startDate || endDate) {
         whereClause.OR = [

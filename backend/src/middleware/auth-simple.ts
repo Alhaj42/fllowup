@@ -36,10 +36,9 @@ export const authenticate = async (
   const token = authHeader.substring(7);
 
   try {
-    // For development, create a fake JWT if needed
-    const jwt = require('jsonwebtoken');
     let decoded: any;
 
+    // For development, create a fake JWT if needed
     if (isDevOrTest) {
       decoded = {
         sub: 'dev-user-id',
@@ -100,7 +99,7 @@ export const optionalAuth = async (
       };
 
       next();
-    } catch (error) {
+    } catch (_error) {
       next();
     }
   } else {

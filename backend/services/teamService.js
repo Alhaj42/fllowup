@@ -284,7 +284,7 @@ class TeamService {
      */
     async getTeamWorkload(filter) {
         try {
-            let whereClause = {};
+            const whereClause = {};
             if (filter?.projectId) {
                 whereClause.phase = {
                     projectId: filter.projectId,

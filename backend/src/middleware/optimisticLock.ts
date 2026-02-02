@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
 import { AppError } from './errorHandler';
 import { AuthRequest } from './auth';
 
@@ -8,20 +7,13 @@ interface VersionedRequest extends AuthRequest {
     version?: number;
     [key: string]: unknown;
   };
+  prisma?: import('@prisma/client').PrismaClient;
 }
 
 export const checkVersionConflict = () => {
-  return async (
-    req: VersionedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+  return async (req: VersionedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (
-        req.method !== 'PUT' &&
-        req.method !== 'PATCH' &&
-        req.method !== 'DELETE'
-      ) {
+      if (req.method !== 'PUT' && req.method !== 'PATCH' && req.method !== 'DELETE') {
         return next();
       }
 
@@ -56,7 +48,9 @@ export const checkVersionConflict = () => {
         return next();
       }
 
-      const existingEntity = await (model.findUnique as (args: { where: { id: string } }) => Promise<{ version: number } | null>)({
+      const existingEntity = await (
+        model.findUnique as (args: { where: { id: string } }) => Promise<{ version: number } | null>
+      )({
         where: { id: entityId as string },
       });
 

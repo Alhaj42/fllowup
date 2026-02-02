@@ -132,7 +132,7 @@ class AssignmentService {
         try {
             const startDate = filter.startDate ? new Date(filter.startDate) : undefined;
             const endDate = filter.endDate ? new Date(filter.endDate) : undefined;
-            let whereClause = {};
+            const whereClause = {};
             if (startDate || endDate) {
                 whereClause.OR = [
                     { startDate: { lte: endDate || new Date() }, endDate: { gte: startDate || new Date() } },

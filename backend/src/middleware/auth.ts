@@ -34,11 +34,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticate = async (
-  req: AuthRequest,
-  res: Response,
-  next: any
-): Promise<void> => {
+export const authenticate = async (req: AuthRequest, res: Response, next: any): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -56,22 +52,18 @@ export const authenticate = async (
     req.user = {
       id: user.id || '',
       email: user.email || '',
-      role: user.role,
+      role: user.role as 'MANAGER' | 'TEAM_LEADER' | 'TEAM_MEMBER',
     };
 
     logger.info(`User authenticated: ${user.email} (${user.role})`);
     next();
-  } catch (error) {
-    logger.error('Authentication error:', error);
+  } catch (_error) {
+    logger.error('Authentication error:', _error);
     next();
   }
 };
 
-export const optionalAuth = async (
-  req: AuthRequest,
-  res: Response,
-  next: any
-): Promise<void> => {
+export const optionalAuth = async (req: AuthRequest, res: Response, next: any): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -92,17 +84,13 @@ export const optionalAuth = async (
     };
 
     next();
-  } catch (error) {
-    logger.error('Optional auth error:', error);
+  } catch (_error) {
+    logger.error('Optional auth error:', _error);
     next();
   }
 };
 
-export const requireManager = async (
-  req: AuthRequest,
-  res: Response,
-  next: any
-): Promise<void> => {
+export const requireManager = async (req: AuthRequest, res: Response, next: any): Promise<void> => {
   try {
     req.user = {
       id: 'manager-id',

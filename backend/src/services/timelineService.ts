@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';
@@ -67,7 +66,7 @@ class TimelineService {
       const endDate = filters.endDate ? new Date(filters.endDate) : undefined;
 
       // Build where clause
-      let whereClause: any = {};
+      const whereClause: any = {};
 
       if (filters.projectId) {
         whereClause.id = filters.projectId;

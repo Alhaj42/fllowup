@@ -1,14 +1,18 @@
-import { Router, Response, Request } from 'express';
+import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { authorize, UserRole } from '../../middleware/authz';
-import requirementService, { CreateRequirementInput, UpdateRequirementInput } from '../../services/requirementService';
+import requirementService, {
+  CreateRequirementInput,
+  UpdateRequirementInput,
+} from '../../services/requirementService';
 import logger from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
 import { prisma } from '../../services/prismaClient';
 
 const router = Router();
 
-router.post('/:projectId/requirements',
+router.post(
+  '/:projectId/requirements',
   authenticate,
   authorize(['MANAGER', 'TEAM_LEADER'] as UserRole[]),
   async (req: AuthRequest, res: Response): Promise<void> => {
@@ -58,7 +62,8 @@ router.post('/:projectId/requirements',
   }
 );
 
-router.patch('/:id/complete',
+router.patch(
+  '/:id/complete',
   authenticate,
   authorize(['MANAGER', 'TEAM_LEADER'] as UserRole[]),
   async (req: AuthRequest, res: Response): Promise<void> => {
@@ -85,7 +90,10 @@ router.patch('/:id/complete',
 
       res.json(requirement);
     } catch (error) {
-      logger.error('Failed to update requirement completion', { error, requirementId: req.params.id });
+      logger.error('Failed to update requirement completion', {
+        error,
+        requirementId: req.params.id,
+      });
 
       if (error instanceof AppError) {
         res.status(error.statusCode).json({ error: error.message });
