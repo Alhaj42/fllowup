@@ -10,6 +10,263 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Custom types to match service expectations
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  ON_HOLD
+  CANCELLED
+  COMPLETED
+}
+
+enum PhaseStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum AssignmentRole {
+  TEAM_LEADER
+  TEAM_MEMBER
+}
+
+enum CostType {
+  EMPLOYEE_COST
+  MATERIAL_COST
+  OTHER_COST
+}
+
+enum UserRole {
+  MANAGER
+  TEAM_LEADER
+  TEAM_MEMBER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum AuditEntityType {
+  PROJECT
+  PHASE
+  TASK
+  ASSIGNMENT
+  COST_ENTRY
+  KPI_ENTRY
+  USER
+  CLIENT
+}
+
+enum ConfigurationCategory {
+  POSITION
+  REGION
+  LICENSE_TYPE
+  PROJECT_TYPE
+  REPLY_REASON
+  ALLOWANCE_TYPE
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  name         String
+  role         UserRole
+  position     String?
+  region       String?
+  grade        String?
+  level        String?
+  monthlyCost  Decimal?     @db.Decimal(10, 2)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  assignments Assignment[]
+  auditLogs   AuditLog[]
+  assignedTasks Task[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+}
+
+model Client {
+  id            String       @id @default(uuid())
+  name          String       @unique
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  address       String?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  projects Project[]
+  requirements ProjectRequirement[]
+
+  @@index([isActive])
+}
+
+model Project {
+  id                    String       @id @default(uuid())
+  clientId              String
+  name                  String
+  contractCode          String       @unique
+  contractSigningDate   DateTime
+  builtUpArea           Decimal      @db.Decimal(10, 2)
+  licenseType           String?
+  projectType           String?
+  requirements           String       @db.Text
+  startDate             DateTime
+  estimatedEndDate       DateTime
+  actualEndDate         DateTime?
+  currentPhase          String
+  status                ProjectStatus
+  modificationAllowedTimes Int        @default(3)
+  modificationDaysPerTime  Int        @default(5)
+  totalCost             Decimal      @default(0) @db.Decimal(10, 2)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  version               Int          @default(1)
+
+  client                Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  projectRequirements   ProjectRequirement[] @relation("Project", fields: [projectId])
+  costEntries          CostEntry[]      @relation("Project", fields: [projectId])
+  kpiEntries           KPIEntry[]      @relation("Project", fields: [projectId])
+  phases                Phase[]      @relation("Project", fields: [projectId])
+  tasks                Task[]      @relation("Project", fields: [projectId])
+  assignments           Assignment[] @relation("Project", fields: [projectId])
+
+  @@index([clientId])
+  @@index([status])
+  @@index([currentPhase])
+  @@index([startDate, estimatedEndDate])
+}
+
+model Phase {
+  id                String       @id @default(uuid())
+  projectId         String
+  name              PhaseName
+  startDate         DateTime
+  duration          Int
+  estimatedEndDate   DateTime
+  actualStartDate    DateTime?
+  actualEndDate      DateTime?
+  status            PhaseStatus
+  progress         Decimal      @default(0) @db.Decimal(5, 2)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  version           Int          @default(1)
+
+  project            Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks              Task[]      @relation("Phase", fields: [phaseId])
+  assignments        Assignment[]      @relation("Phase", fields: [phaseId])
+
+  @@unique([projectId, name])
+  @@index([status])
+}
+
+model Task {
+  id                String       @id @default(uuid())
+  phaseId           String
+  code              String
+  description       String       @db.Text
+  duration          Int
+  status            TaskStatus
+  assignedTeamMemberId String?
+  startDate         DateTime?
+  endDate           DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  version           Int          @default(1)
+
+  phase           Phase       @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  assignedTeamMember User? @relation("assignedTeamMemberId", fields: [assignedTeamMemberId], references: [id])
+}
+
+model Assignment {
+  id                String       @id @default(uuid())
+  phaseId           String
+  teamMemberId      String
+  role              AssignmentRole
+  workingPercentage  Decimal @db.Decimal(5, 2)
+  startDate         DateTime
+  endDate           DateTime?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  version           Int          @default(1)
+
+  phase             Phase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  teamMember        User       @relation("teamMember", fields: [teamMemberId], references: [id])
+}
+
+model CostEntry {
+  id          String       @id @default(uuid())
+  projectId   String
+  phaseId     String
+  employeeId  String
+  period      DateTime
+  costAmount Decimal @db.Decimal(10, 2)
+  description String? @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase         Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  employee      User   @relation("employee", fields: [employeeId], references: [id])
+}
+
+model KPIEntry {
+  id         String       @id @default(uuid())
+  projectId String
+  phaseId    String
+  employeeId String
+  delayedDays Int      @default(0)
+  clientModifications Int      @default(0)
+  technicalMistakes Int      @default(0)
+  period     DateTime?
+  score      Decimal? @db.Decimal(5, 2)
+  createdAt  DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase      Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  employee  User @relation("employee", fields: [employeeId], references: [id])
+}
+
+model ProjectRequirement {
+  id               String       @id @default(uuid())
+  projectId         String
+  description           String       @db.Text
+  isCompleted  Boolean      @default(false)
+  completedAt      DateTime?
+  completedBy      String?
+  sortOrder        Int          @default(0)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  completedByUser User? @relation("completedBy", fields: [completedBy], references: [id])
+
+  @@index([projectId])
+  @@index([isCompleted])
+  @@index([sortOrder])
+}
+
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 enum UserRole {
   MANAGER
   TEAM_LEADER
@@ -180,7 +437,6 @@ model CostEntry {
   employeeId  String
   period      DateTime
   costAmount Decimal @db.Decimal(10, 2)
-  costType    CostType
   description String? @db.Text
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
