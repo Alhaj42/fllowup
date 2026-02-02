@@ -9,8 +9,7 @@
   },
 "scripts": {
     "dev": "ts-node src/server.ts",
-    "postinstall": "prisma generate",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "test": "jest",
     "test:watch": "jest --watch",
