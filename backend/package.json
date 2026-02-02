@@ -7,9 +7,10 @@
   "directories": {
     "test": "tests"
   },
-  "scripts": {
+"scripts": {
     "dev": "ts-node src/server.ts",
-    "build": "prisma generate && tsc",
+    "postinstall": "prisma generate",
+    "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
     "test:watch": "jest --watch",
