@@ -10,7 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Custom types to match service expectations
+// Enums matching service expectations
+enum UserRole {
+  MANAGER
+  TEAM_LEADER
+  TEAM_MEMBER
+}
+
 enum ProjectStatus {
   PLANNED
   IN_PROGRESS
@@ -42,12 +48,6 @@ enum CostType {
   OTHER_COST
 }
 
-enum UserRole {
-  MANAGER
-  TEAM_LEADER
-  TEAM_MEMBER
-}
-
 enum AuditAction {
   CREATE
   UPDATE
@@ -74,6 +74,13 @@ enum ConfigurationCategory {
   ALLOWANCE_TYPE
 }
 
+enum PhaseName {
+  STUDIES
+  DESIGN
+}
+
+// Models
+
 model User {
   id           String       @id @default(uuid())
   email        String       @unique
@@ -91,6 +98,10 @@ model User {
   assignments Assignment[]
   auditLogs   AuditLog[]
   assignedTasks Task[]
+  costEntries   CostEntry[]
+  kpiEntries    KPIEntry[]
+  teamMembers   TeamMember[]
+  requirementsCompleted ProjectRequirement[]
 
   @@index([email])
   @@index([role])
@@ -109,7 +120,6 @@ model Client {
   updatedAt     DateTime     @updatedAt
 
   projects Project[]
-  requirements ProjectRequirement[]
 
   @@index([isActive])
 }
@@ -137,18 +147,15 @@ model Project {
   version               Int          @default(1)
 
   client                Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  projectRequirements   ProjectRequirement[] @relation("Project", fields: [projectId])
-  costEntries          CostEntry[]      @relation("Project", fields: [projectId])
-  kpiEntries           KPIEntry[]      @relation("Project", fields: [projectId])
-  phases                Phase[]      @relation("Project", fields: [projectId])
-  tasks                Task[]      @relation("Project", fields: [projectId])
-  assignments           Assignment[] @relation("Project", fields: [projectId])
-
+  projectRequirements   ProjectRequirement[]
+  costEntries          CostEntry[]
+  kpiEntries           KPIEntry[]
+  phases                Phase[]
+  
   @@index([clientId])
   @@index([status])
   @@index([currentPhase])
   @@index([startDate, estimatedEndDate])
-  @@index([modificationAllowedTimes, modificationDaysPerTime])
 }
 
 model Phase {
@@ -164,11 +171,13 @@ model Phase {
   progress         Decimal      @default(0) @db.Decimal(5, 2)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
-  version           Int         @default(1)
+  version           Int          @default(1)
 
   project            Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks              Task[]      @relation("Phase", fields: [phaseId])
-  assignments        Assignment[] @relation("Phase", fields: [phaseId])
+  tasks              Task[]
+  assignments        Assignment[]
+  costEntries        CostEntry[]
+  kpiEntries         KPIEntry[]
 
   @@unique([projectId, name])
   @@index([status])
@@ -189,7 +198,7 @@ model Task {
   version           Int          @default(1)
 
   phase           Phase       @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  assignedTeamMember User? @relation("assignedTeamMemberId", fields: [assignedTeamMemberId], references: [id])
+  assignedTeamMember User? @relation(fields: [assignedTeamMemberId], references: [id])
 
   @@index([phaseId])
   @@index([status])
@@ -211,7 +220,10 @@ model Assignment {
   version           Int          @default(1)
 
   phase             Phase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  teamMember        User       @relation("teamMember", fields: [teamMemberId], references: [id])
+  teamMember        User       @relation(fields: [teamMemberId], references: [id])
+
+  @@index([phaseId, teamMemberId])
+  @@index([isActive])
 }
 
 model CostEntry {
@@ -221,13 +233,16 @@ model CostEntry {
   employeeId  String
   period      DateTime
   costAmount Decimal @db.Decimal(10, 2)
+  costType    CostType
   description String? @db.Text
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   phase         Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  employee      User   @relation("employee", fields: [employeeId], references: [id])
+  employee      User   @relation(fields: [employeeId], references: [id])
+
+  @@index([projectId, phaseId, employeeId])
 }
 
 model KPIEntry {
@@ -245,7 +260,27 @@ model KPIEntry {
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   phase      Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  employee  User @relation("employee", fields: [employeeId], references: [id])
+  employee  User @relation(fields: [employeeId], references: [id])
+
+  @@index([projectId])
+  @@index([phaseId])
+}
+
+model AuditLog {
+  id           String       @id @default(uuid())
+  entityType   AuditEntityType
+  entityId     String
+  action     AuditAction
+  changedBy   String
+  changes     Json?
+  ipAddress  String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  changedByUser User @relation(fields: [changedBy], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
 }
 
 model ProjectRequirement {
@@ -260,19 +295,46 @@ model ProjectRequirement {
   updatedAt         DateTime     @updatedAt
 
   project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  completedByUser User? @relation("completedByUser", fields: [completedBy], references: [id])
+  completedByUser User? @relation(fields: [completedBy], references: [id])
 
   @@index([projectId])
-  @@index([currentPhase])
-  @@index([startDate, estimatedEndDate])
-  @@index([modificationAllowedTimes, modificationDaysPerTime])
+  @@index([isCompleted])
+  @@index([sortOrder])
+}
+
+model ConfigurationItem {
+  id          String               @id @default(uuid())
+  category    ConfigurationCategory
+  name        String
+  code        String?
+  description String?              @db.Text
+  isActive    Boolean              @default(true)
+  sortOrder   Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([category, name])
+  @@index([category])
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  members     TeamMember[]
 }
 
 model TeamMember {
   id          String       @id @default(uuid())
   userId      String
   teamId      String
-  role        TeamRole
+  role        UserRole 
   isActive   Boolean      @default(true)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
@@ -283,18 +345,4 @@ model TeamMember {
 
   @@unique([teamId, userId])
   @@index([isActive])
-}
-
-model TeamMember {
-  id          String       @id @default(uuid())
-  userId      String
-  teamId      String
-  role        TeamRole
-  isActive   Boolean      @default(true)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  version     Int       @default(1)
-
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
