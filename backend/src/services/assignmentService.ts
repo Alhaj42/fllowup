@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { UserRole, AssignmentRole, Assignment, PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import AuditLogService from './auditLogService';

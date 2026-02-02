@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { authorize, UserRole } from '../../middleware/authz';

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { AuditAction, AuditLog as AuditLogModel, AuditEntityType } from '@prisma/client';
 import { prisma } from './prismaClient';
 

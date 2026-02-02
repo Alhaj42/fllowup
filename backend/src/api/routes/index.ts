@@ -1,4 +1,3 @@
-// @ts-nocheck
 import express, { Router } from 'express';
 import helmet from 'helmet';
 
